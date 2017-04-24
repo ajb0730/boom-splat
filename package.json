@@ -20,6 +20,8 @@
   "dependencies": {
     "express": "^4.15.2",
     "socket.io": "^1.7.3",
-    "blockly": "^1.0.0"
+    "blockly": "^1.0.0",
+    "lodash": "^4.16.4",
+    "util": "^0.10.3"
   }
 }
