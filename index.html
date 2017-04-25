@@ -5,18 +5,14 @@
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
+      #blocklyDiv { height: 480px; width: 600px; float: left; }
+      #scores { float: right; top: 0; padding-top: 16px; padding-right: 16px; font: 24px Helvetica, Arial; }
+      #log { clear: both; font: 13px Menlo, Consolas, Monaco, "Lucida Console", monospace; flex: 1; border-top: 1px solid black; max-height: 350px; min-height: 150px; position: relative; overflow: auto; }
     </style>
   </head>
   <body>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/blockly/blockly_compressed.js"></script>
-    <script src="/blockly/blocks_compressed.js"></script>
-    <script src="/blockly/msg/js/en.js"></script>
-    <script>
-        var socket = io()
-    </script>
     
-    <div id="blocklyDiv" style="height: 480px; width: 600px;"></div>
+    <div id="blocklyDiv"></div>
     <xml id="toolbox" style="display: none">
       <block type="controls_if"></block>
       <block type="controls_repeat_ext"></block>
@@ -26,10 +22,181 @@
       <block type="text"></block>
       <block type="text_print"></block>
     </xml>
+    
+    <div id="scores">
+      <div id="own">
+        Nickname: <input type="text" id="nickname" />
+        <input type="button" id="auth" value="Join!" />
+      </div>
+      <div id="controls">
+        <input type="button" id="test" value="Test" />
+        <input type="button" id="stop" value="Stop" />
+        <input type="button" id="play" value="Play" />
+        <input type="button" id="leave" value="Leave" />
+      </div>
+      <hr />
+      <div id="others">
+      </div>
+    </div>
+    
+    <footer id="log">
 
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/blockly/blockly_compressed.js"></script>
+    <script src="/blockly/blocks_compressed.js"></script>
+    <script src="/blockly/msg/js/en.js"></script>
+    <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
     <script>
-  var workspace = Blockly.inject('blocklyDiv',
-      {toolbox: document.getElementById('toolbox')});
+      
+      // hide all of the action buttons
+      $(document).ready(function(){
+        $('#test').hide();
+        $('#stop').hide();
+        $('#play').hide();
+        $('#leave').hide();
+      })
+      
+      // set up variables to track scores
+      var player;
+      var others = [];
+      
+      // a function to refresh the score display
+      var refresh = function() {
+        $('#own').text(player.name + ' score: ' + player.score + '/' + player.tagged).append($('<br>'));
+        $('#others').text('');
+        _.forEach(others,function (b) {
+          $('#others').append($('<span>'))
+            .text(b.name + ' score: ' + b.score + '/' + b.tagged)
+            .append($('<br>'));
+        })
+      }
+            
+      // init the blockly ui widgets
+      var workspace = Blockly.inject('blocklyDiv',{toolbox: document.getElementById('toolbox')});
+
+      // connect the websocket
+      var socket = io();
+      
+      // track 'status' messages
+      socket.on('status',(message) => {
+        $('#log').append('<p>' + message + '</p>');  // log it
+      })
+      
+      // track 'update' messages
+      socket.on('update',(bot) => {
+        $('#log').append('<p>' + bot.name + ' is at (' + bot.x +','+ bot.y +'), facing '+bot.directionStr+'</p>')  // log it
+        
+        // update the variables we're using to track scores
+        if(bot.id === player.id) {
+          player = bot;
+        } else {
+          _.remove(others,(b) => { return b.id === bot.id });
+          others.push(bot);
+        }
+        
+        // refresh the score display
+        refresh();
+      });
+      
+      // track 'remove' messages
+      socket.on('remove',(bot) => {
+        $('#log').append('<p>' + bot.name + ' has left the Arena</p>')  // log it        
+        _.remove(others,(b) => { return b.id === bot.id });
+        refresh();
+      });
+      
+      var distanceToWall = -1
+      
+      socket.on('request command',(channel,callback) => {
+        var command;
+        
+        if(distanceToWall < 0){
+          command = 'distance to wall'
+        } else if(distanceToWall > 0){
+          command = 'move forward'
+        } else {
+          switch(_.random(0,1)){
+            case 0:
+              command = 'turn left';
+              break;
+            case 1:
+              command = 'turn right';
+              break;
+          }
+          distanceToWall = -1;
+        }
+        callback(command);
+      });
+      
+      socket.on('result',(obj) => {
+        $('#log').append('<p>' + obj.command + ': ' + obj.result + '</p>')  // log it                
+        if(obj.command === 'distance to wall'){
+          distanceToWall = obj.result;
+        } else if(obj.command === 'move forward'){
+          if(obj.result){
+            distanceToWall -= 1;
+          } else {
+            distanceToWall = 0;
+          }
+        }
+      })
+      
+      localStorage.debug = '*'     
+      
+      // handle when user click the 'Join' button
+      $('#auth').click(() => {
+        name = $('#nickname').val().trim();
+        if(name && name !== '') {
+          socket.emit('auth',{name: name},(session) => {
+            player = session;
+            console.log('Player Id ' + player.id);
+            refresh();
+            $('#test').show();
+            $('#stop').hide();
+            $('#play').show();
+            $('#leave').hide();
+          })
+        }
+      })
+      
+      // handle when user clicks the 'Test' button
+      $('#test').click(() => {
+        $('#test').hide();
+        $('#stop').show();
+        $('#play').hide();
+        $('#leave').hide();
+        socket.emit('test');
+      })
+      
+      // handle when user clicks the 'Stop' button
+      $('#stop').click(() => {
+        $('#test').show();
+        $('#stop').hide();
+        $('#play').show();
+        $('#leave').hide();
+        socket.emit('stop');
+      })
+      
+      // handle when user clicks the 'Play' button
+      $('#play').click(() => {
+        $('#test').hide();
+        $('#stop').hide();
+        $('#play').hide();
+        $('#leave').show();
+        socket.emit('play');
+      })
+
+      // handle when user clicks the 'Leave' button
+      $('#leave').click(() => {
+        $('#test').show();
+        $('#stop').hide();
+        $('#play').show();
+        $('#leave').hide();
+        socket.emit('leave');
+      })
     </script>
 
   </body>
