@@ -1,0 +1,424 @@
+{
+  "{\"filename\":\"/app/index.js\",\"env\":{},\"retainLines\":false,\"highlightCode\":true,\"suppressDeprecationMessages\":false,\"presets\":[],\"plugins\":[[[],null]],\"ignore\":[],\"code\":true,\"metadata\":true,\"ast\":true,\"comments\":true,\"compact\":\"auto\",\"minified\":false,\"sourceRoot\":\"/app\",\"babelrc\":true,\"sourceType\":\"module\",\"moduleIds\":false,\"passPerPreset\":false,\"parserOpts\":false,\"generatorOpts\":false}:6.24.1": {
+    "metadata": {
+      "usedHelpers": [],
+      "marked": [],
+      "modules": {
+        "imports": [],
+        "exports": {
+          "exported": [],
+          "specifiers": []
+        }
+      }
+    },
+    "options": {
+      "filename": "/app/index.js",
+      "filenameRelative": "/app/index.js",
+      "env": {},
+      "retainLines": false,
+      "highlightCode": true,
+      "suppressDeprecationMessages": false,
+      "presets": [],
+      "plugins": [
+        [
+          [],
+          null
+        ]
+      ],
+      "ignore": [],
+      "code": true,
+      "metadata": true,
+      "ast": false,
+      "comments": true,
+      "compact": "auto",
+      "minified": false,
+      "sourceMaps": "both",
+      "sourceMapTarget": "index.js",
+      "sourceFileName": "index.js",
+      "sourceRoot": "/app",
+      "babelrc": false,
+      "sourceType": "module",
+      "moduleRoot": "/app",
+      "moduleIds": false,
+      "passPerPreset": false,
+      "parserOpts": false,
+      "generatorOpts": false,
+      "basename": "index"
+    },
+    "ignored": false,
+    "code": "// pull in libraries\nconst app = require('express')();\nconst http = require('http').Server(app);\nconst server = require('socket.io')(http);\nconst _ = require('lodash');\n\nconst Player = require('./player');\nconst Board = require('./board');\n\n// pull in system config\nconst port = process.env.PORT || 3000;\n\n/*\n * HTTP Routing\n */\n\n// proxy the Blockly code from the service itself\napp.get('/blockly/*', function (req, res) {\n  res.sendFile(__dirname + '/node_modules/' + req.path);\n});\n\n// serve the client page from the root\napp.get('/', function (req, res) {\n  res.sendFile(__dirname + '/index.html');\n});\n\n/*\n * Server Code\n */\n\n// server-wide globals\nlet clientId = 0; // unique client id\nlet players = []; // list of players\nlet boardId = 0; // unique board id\nlet boards = []; // list of active boards\n\n// accept new connections from the client\nvar main = server.of('/');\n\nmain.on('connection', function (client) {\n  // client-wide globals\n  let player;\n  let playerId;\n\n  // player has connected and is ready to start editing\n  client.on('auth', (opts, cb) => {\n    // 'opts' contains the name data from the client, 'cb' is how we send a message back to the client\n    playerId = ++clientId;\n    player = new Player(_.assign({\n      id: playerId,\n      name: 'Player ' + playerId,\n      score: 0,\n      tagged: 0\n    }, opts));\n    players.push(player);\n\n    client.player = player;\n\n    console.log('[%s] has joined', player.name);\n    server.emit('status', '[' + player.id + '] <font color=\"red\">' + player.name + '</font> has joined.');\n\n    cb(player);\n  });\n\n  // player is in editing and wants to test their robot; put them in a 'private' board and start it running\n  client.on('test', () => {\n    var board = new Board({ id: ++boardId, server: server });\n    client.join(board.channel());\n    board.addPlayer(player);\n    boards.push(board);\n    client.board = board;\n    board.run();\n  });\n\n  // player is in test and wants to go back to editing\n  client.on('stop', () => {\n    var board = client.board;\n    board.removePlayer(player);\n    client.leave(board.channel());\n    if (board.numPlayers() === 0) {\n      board.stop();\n      _.remove(boards, function (b) {\n        return b.id === board.id;\n      });\n    }\n    delete client.board;\n  });\n\n  // player is in editing and wants to go to the arena (compete against other robots)\n  client.on('play', () => {\n    // if no open board, create a new one\n    // or, add player to existing open board\n  });\n\n  // player is in the arena and wants to go back to editing\n  client.on('leave', () => {});\n\n  // player has left entirely\n  client.on('disconnect', () => {\n    _.remove(players, function (p) {\n      return p.id === player.id;\n    });\n    console.log('[%s] has left', player.name);\n    server.emit('status', '[' + player.id + '] <font color=\"red\">' + player.name + '</font> has left.');\n    if (client.hasOwnProperty('board')) {\n      var board = client.board;\n      board.removePlayer(player);\n      if (board.numPlayers() === 0) {\n        _.remove(function (b) {\n          return b.id === board.id;\n        });\n      }\n    }\n  });\n});\n\n/*\n * Start Service\n */\nhttp.listen(port, function () {\n  console.log('listening on *:%d', port);\n});\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImluZGV4LmpzIl0sIm5hbWVzIjpbImFwcCIsInJlcXVpcmUiLCJodHRwIiwiU2VydmVyIiwic2VydmVyIiwiXyIsIlBsYXllciIsIkJvYXJkIiwicG9ydCIsInByb2Nlc3MiLCJlbnYiLCJQT1JUIiwiZ2V0IiwicmVxIiwicmVzIiwic2VuZEZpbGUiLCJfX2Rpcm5hbWUiLCJwYXRoIiwiY2xpZW50SWQiLCJwbGF5ZXJzIiwiYm9hcmRJZCIsImJvYXJkcyIsIm1haW4iLCJvZiIsIm9uIiwiY2xpZW50IiwicGxheWVyIiwicGxheWVySWQiLCJvcHRzIiwiY2IiLCJhc3NpZ24iLCJpZCIsIm5hbWUiLCJzY29yZSIsInRhZ2dlZCIsInB1c2giLCJjb25zb2xlIiwibG9nIiwiZW1pdCIsImJvYXJkIiwiam9pbiIsImNoYW5uZWwiLCJhZGRQbGF5ZXIiLCJydW4iLCJyZW1vdmVQbGF5ZXIiLCJsZWF2ZSIsIm51bVBsYXllcnMiLCJzdG9wIiwicmVtb3ZlIiwiYiIsInAiLCJoYXNPd25Qcm9wZXJ0eSIsImxpc3RlbiJdLCJtYXBwaW5ncyI6IkFBQUE7QUFDQSxNQUFNQSxNQUFNQyxRQUFRLFNBQVIsR0FBWjtBQUNBLE1BQU1DLE9BQU9ELFFBQVEsTUFBUixFQUFnQkUsTUFBaEIsQ0FBdUJILEdBQXZCLENBQWI7QUFDQSxNQUFNSSxTQUFTSCxRQUFRLFdBQVIsRUFBcUJDLElBQXJCLENBQWY7QUFDQSxNQUFNRyxJQUFJSixRQUFRLFFBQVIsQ0FBVjs7QUFFQSxNQUFNSyxTQUFTTCxRQUFRLFVBQVIsQ0FBZjtBQUNBLE1BQU1NLFFBQVFOLFFBQVEsU0FBUixDQUFkOztBQUVBO0FBQ0EsTUFBTU8sT0FBT0MsUUFBUUMsR0FBUixDQUFZQyxJQUFaLElBQW9CLElBQWpDOztBQUVBOzs7O0FBSUE7QUFDQVgsSUFBSVksR0FBSixDQUFRLFlBQVIsRUFBc0IsVUFBVUMsR0FBVixFQUFjQyxHQUFkLEVBQWtCO0FBQ3BDQSxNQUFJQyxRQUFKLENBQWFDLFlBQVksZ0JBQVosR0FB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QUssWUFBUUMsR0FBUixDQUFZLGVBQVosRUFBNkJYLE9BQU9NLElBQXBDO0FBQ0E1QixXQUFPa0MsSUFBUCxDQUFZLFFBQVosRUFBc0IsTUFBTVosT0FBT0ssRUFBYixHQUFrQixzQkFBbEIsR0FBMkNMLE9BQU9NLElBQWxELEdBQXlELG1CQUEvRTtBQUNBLFFBQUdQLE9BQU8wQixjQUFQLENBQXNCLE9BQXRCLENBQUgsRUFBa0M7QUFDaEMsVUFBSVosUUFBUWQsT0FBT2MsS0FBbkI7QUFDQUEsWUFBTUssWUFBTixDQUFtQmxCLE1BQW5CO0FBQ0EsVUFBR2EsTUFBTU8sVUFBTixPQUF1QixDQUExQixFQUE0QjtBQUMxQnpDLFVBQUUyQyxNQUFGLENBQVMsVUFBU0MsQ0FBVCxFQUFXO0FBQUMsaUJBQU9BLEVBQUVsQixFQUFGLEtBQVNRLE1BQU1SLEVBQXRCO0FBQXlCLFNBQTlDO0FBQ0Q7QUFDRjtBQUNGLEdBYkQ7QUFjRCxDQXhFRDs7QUEwRUE7OztBQUdBN0IsS0FBS2tELE1BQUwsQ0FBWTVDLElBQVosRUFBa0IsWUFBVTtBQUN4QjRCLFVBQVFDLEdBQVIsQ0FBWSxtQkFBWixFQUFpQzdCLElBQWpDO0FBQ0gsQ0FGRCIsImZpbGUiOiJpbmRleC5qcyIsInNvdXJjZVJvb3QiOiIvYXBwIiwic291cmNlc0NvbnRlbnQiOlsiLy8gcHVsbCBpbiBsaWJyYXJpZXNcbmNvbnN0IGFwcCA9IHJlcXVpcmUoJ2V4cHJlc3MnKSgpXG5jb25zdCBodHRwID0gcmVxdWlyZSgnaHR0cCcpLlNlcnZlcihhcHApXG5jb25zdCBzZXJ2ZXIgPSByZXF1aXJlKCdzb2NrZXQuaW8nKShodHRwKVxuY29uc3QgXyA9IHJlcXVpcmUoJ2xvZGFzaCcpXG5cbmNvbnN0IFBsYXllciA9IHJlcXVpcmUoJy4vcGxheWVyJylcbmNvbnN0IEJvYXJkID0gcmVxdWlyZSgnLi9ib2FyZCcpXG5cbi8vIHB1bGwgaW4gc3lzdGVtIGNvbmZpZ1xuY29uc3QgcG9ydCA9IHByb2Nlc3MuZW52LlBPUlQgfHwgMzAwMFxuXG4vKlxuICogSFRUUCBSb3V0aW5nXG4gKi9cblxuLy8gcHJveHkgdGhlIEJsb2NrbHkgY29kZSBmcm9tIHRoZSBzZXJ2aWNlIGl0c2VsZlxuYXBwLmdldCgnL2Jsb2NrbHkvKicsIGZ1bmN0aW9uIChyZXEscmVzKXtcbiAgICByZXMuc2VuZEZpbGUoX19kaXJuYW1lICsgJy9ub2RlX21vZHVsZXMvJyArIHJlcS5wYXRoKSAgXG59KVxuXG4vLyBzZXJ2ZSB0aGUgY2xpZW50IHBhZ2UgZnJvbSB0aGUgcm9vdFxuYXBwLmdldCgnLycsIGZ1bmN0aW9uIChyZXEscmVzKXtcbiAgICByZXMuc2VuZEZpbGUoX19kaXJuYW1lICsgJy9pbmRleC5odG1sJylcbn0pXG5cbi8qXG4gKiBTZXJ2ZXIgQ29kZVxuICovXG5cbi8vIHNlcnZlci13aWRlIGdsb2JhbHNcbmxldCBjbGllbnRJZCA9IDAgICAvLyB1bmlxdWUgY2xpZW50IGlkXG5sZXQgcGxheWVycyA9IFtdICAgLy8gbGlzdCBvZiBwbGF5ZXJzXG5sZXQgYm9hcmRJZCA9IDAgICAgLy8gdW5pcXVlIGJvYXJkIGlkXG5sZXQgYm9hcmRzID0gW10gICAgLy8gbGlzdCBvZiBhY3RpdmUgYm9hcmRzXG5cbi8vIGFjY2VwdCBuZXcgY29ubmVjdGlvbnMgZnJvbSB0aGUgY2xpZW50XG52YXIgbWFpbiA9IHNlcnZlci5vZignLycpXG5cbm1haW4ub24oJ2Nvbm5lY3Rpb24nLCBmdW5jdGlvbiAoY2xpZW50KXtcbiAgLy8gY2xpZW50LXdpZGUgZ2xvYmFsc1xuICBsZXQgcGxheWVyXG4gIGxldCBwbGF5ZXJJZFxuICAgIFxuICAvLyBwbGF5ZXIgaGFzIGNvbm5lY3RlZCBhbmQgaXMgcmVhZHkgdG8gc3RhcnQgZWRpdGluZ1xuICBjbGllbnQub24oJ2F1dGgnLCAob3B0cywgY2IpID0+IHsgIC8vICdvcHRzJyBjb250YWlucyB0aGUgbmFtZSBkYXRhIGZyb20gdGhlIGNsaWVudCwgJ2NiJyBpcyBob3cgd2Ugc2VuZCBhIG1lc3NhZ2UgYmFjayB0byB0aGUgY2xpZW50XG4gICAgcGxheWVySWQgPSArK2NsaWVudElkXG4gICAgcGxheWVyID0gbmV3IFBsYXllcihfLmFzc2lnbih7XG4gICAgICBpZDogcGxheWVySWQsXG4gICAgICBuYW1lOiAnUGxheWVyICcgKyBwbGF5ZXJJZCxcbiAgICAgIHNjb3JlOiAwLFxuICAgICAgdGFnZ2VkOiAwLFxuICAgIH0sIG9wdHMpKVxuICAgIHBsYXllcnMucHVzaChwbGF5ZXIpXG4gICAgXG4gICAgY2xpZW50LnBsYXllciA9IHBsYXllclxuXG4gICAgY29uc29sZS5sb2coJ1slc10gaGFzIGpvaW5lZCcsIHBsYXllci5uYW1lKVxuICAgIHNlcnZlci5lbWl0KCdzdGF0dXMnLCAnWycgKyBwbGF5ZXIuaWQgKyAnXSA8Zm9udCBjb2xvcj1cInJlZFwiPicgKyBwbGF5ZXIubmFtZSArICc8L2ZvbnQ+IGhhcyBqb2luZWQuJylcbiAgICBcbiAgICBjYihwbGF5ZXIpXG4gIH0pXG4gIFxuICAvLyBwbGF5ZXIgaXMgaW4gZWRpdGluZyBhbmQgd2FudHMgdG8gdGVzdCB0aGVpciByb2JvdDsgcHV0IHRoZW0gaW4gYSAncHJpdmF0ZScgYm9hcmQgYW5kIHN0YXJ0IGl0IHJ1bm5pbmdcbiAgY2xpZW50Lm9uKCd0ZXN0JywgKCkgPT4ge1xuICAgIHZhciBib2FyZCA9IG5ldyBCb2FyZCh7aWQ6ICsrYm9hcmRJZCwgc2VydmVyOiBzZXJ2ZXJ9KVxuICAgIGNsaWVudC5qb2luKGJvYXJkLmNoYW5uZWwoKSlcbiAgICBib2FyZC5hZGRQbGF5ZXIocGxheWVyKVxuICAgIGJvYXJkcy5wdXNoKGJvYXJkKVxuICAgIGNsaWVudC5ib2FyZCA9IGJvYXJkXG4gICAgYm9hcmQucnVuKClcbiAgfSlcbiAgXG4gIC8vIHBsYXllciBpcyBpbiB0ZXN0IGFuZCB3YW50cyB0byBnbyBiYWNrIHRvIGVkaXRpbmdcbiAgY2xpZW50Lm9uKCdzdG9wJywgKCkgPT4ge1xuICAgIHZhciBib2FyZCA9IGNsaWVudC5ib2FyZFxuICAgIGJvYXJkLnJlbW92ZVBsYXllcihwbGF5ZXIpXG4gICAgY2xpZW50LmxlYXZlKGJvYXJkLmNoYW5uZWwoKSlcbiAgICBpZihib2FyZC5udW1QbGF5ZXJzKCkgPT09IDApe1xuICAgICAgYm9hcmQuc3RvcCgpXG4gICAgICBfLnJlbW92ZShib2FyZHMsZnVuY3Rpb24oYil7cmV0dXJuIGIuaWQgPT09IGJvYXJkLmlkfSlcbiAgICB9XG4gICAgZGVsZXRlIGNsaWVudC5ib2FyZFxuICB9KVxuICBcbiAgLy8gcGxheWVyIGlzIGluIGVkaXRpbmcgYW5kIHdhbnRzIHRvIGdvIHRvIHRoZSBhcmVuYSAoY29tcGV0ZSBhZ2FpbnN0IG90aGVyIHJvYm90cylcbiAgY2xpZW50Lm9uKCdwbGF5JywgKCkgPT4ge1xuICAgIC8vIGlmIG5vIG9wZW4gYm9hcmQsIGNyZWF0ZSBhIG5ldyBvbmVcbiAgICAvLyBvciwgYWRkIHBsYXllciB0byBleGlzdGluZyBvcGVuIGJvYXJkXG4gIH0pXG4gIFxuICAvLyBwbGF5ZXIgaXMgaW4gdGhlIGFyZW5hIGFuZCB3YW50cyB0byBnbyBiYWNrIHRvIGVkaXRpbmdcbiAgY2xpZW50Lm9uKCdsZWF2ZScsICgpID0+IHtcbiAgICBcbiAgfSkgIFxuICBcbiAgLy8gcGxheWVyIGhhcyBsZWZ0IGVudGlyZWx5XG4gIGNsaWVudC5vbignZGlzY29ubmVjdCcsICgpID0+IHtcbiAgICBfLnJlbW92ZShwbGF5ZXJzLGZ1bmN0aW9uIChwKSB7XG4gICAgICByZXR1cm4gcC5pZCA9PT0gcGxheWVyLmlkXG4gICAgfSlcbiAgICBjb25zb2xlLmxvZygnWyVzXSBoYXMgbGVmdCcsIHBsYXllci5uYW1lKVxuICAgIHNlcnZlci5lbWl0KCdzdGF0dXMnLCAnWycgKyBwbGF5ZXIuaWQgKyAnXSA8Zm9udCBjb2xvcj1cInJlZFwiPicgKyBwbGF5ZXIubmFtZSArICc8L2ZvbnQ+IGhhcyBsZWZ0LicpXG4gICAgaWYoY2xpZW50Lmhhc093blByb3BlcnR5KCdib2FyZCcpKXtcbiAgICAgIHZhciBib2FyZCA9IGNsaWVudC5ib2FyZFxuICAgICAgYm9hcmQucmVtb3ZlUGxheWVyKHBsYXllcilcbiAgICAgIGlmKGJvYXJkLm51bVBsYXllcnMoKSA9PT0gMCl7XG4gICAgICAgIF8ucmVtb3ZlKGZ1bmN0aW9uKGIpe3JldHVybiBiLmlkID09PSBib2FyZC5pZH0pXG4gICAgICB9XG4gICAgfVxuICB9KVxufSlcblxuLypcbiAqIFN0YXJ0IFNlcnZpY2VcbiAqL1xuaHR0cC5saXN0ZW4ocG9ydCwgZnVuY3Rpb24oKXtcbiAgICBjb25zb2xlLmxvZygnbGlzdGVuaW5nIG9uICo6JWQnLCBwb3J0KVxufSlcbiJdfQ==",
+    "ast": null,
+    "map": {
+      "version": 3,
+      "sources": [
+        "index.js"
+      ],
+      "names": [
+        "app",
+        "require",
+        "http",
+        "Server",
+        "server",
+        "_",
+        "Player",
+        "Board",
+        "port",
+        "process",
+        "env",
+        "PORT",
+        "get",
+        "req",
+        "res",
+        "sendFile",
+        "__dirname",
+        "path",
+        "clientId",
+        "players",
+        "boardId",
+        "boards",
+        "main",
+        "of",
+        "on",
+        "client",
+        "player",
+        "playerId",
+        "opts",
+        "cb",
+        "assign",
+        "id",
+        "name",
+        "score",
+        "tagged",
+        "push",
+        "console",
+        "log",
+        "emit",
+        "board",
+        "join",
+        "channel",
+        "addPlayer",
+        "run",
+        "removePlayer",
+        "leave",
+        "numPlayers",
+        "stop",
+        "remove",
+        "b",
+        "p",
+        "hasOwnProperty",
+        "listen"
+      ],
+      "mappings": "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",
+      "file": "index.js",
+      "sourceRoot": "/app",
+      "sourcesContent": [
+        "// pull in libraries\nconst app = require('express')()\nconst http = require('http').Server(app)\nconst server = require('socket.io')(http)\nconst _ = require('lodash')\n\nconst Player = require('./player')\nconst Board = require('./board')\n\n// pull in system config\nconst port = process.env.PORT || 3000\n\n/*\n * HTTP Routing\n */\n\n// proxy the Blockly code from the service itself\napp.get('/blockly/*', function (req,res){\n    res.sendFile(__dirname + '/node_modules/' + req.path)  \n})\n\n// serve the client page from the root\napp.get('/', function (req,res){\n    res.sendFile(__dirname + '/index.html')\n})\n\n/*\n * Server Code\n */\n\n// server-wide globals\nlet clientId = 0   // unique client id\nlet players = []   // list of players\nlet boardId = 0    // unique board id\nlet boards = []    // list of active boards\n\n// accept new connections from the client\nvar main = server.of('/')\n\nmain.on('connection', function (client){\n  // client-wide globals\n  let player\n  let playerId\n    \n  // player has connected and is ready to start editing\n  client.on('auth', (opts, cb) => {  // 'opts' contains the name data from the client, 'cb' is how we send a message back to the client\n    playerId = ++clientId\n    player = new Player(_.assign({\n      id: playerId,\n      name: 'Player ' + playerId,\n      score: 0,\n      tagged: 0,\n    }, opts))\n    players.push(player)\n    \n    client.player = player\n\n    console.log('[%s] has joined', player.name)\n    server.emit('status', '[' + player.id + '] <font color=\"red\">' + player.name + '</font> has joined.')\n    \n    cb(player)\n  })\n  \n  // player is in editing and wants to test their robot; put them in a 'private' board and start it running\n  client.on('test', () => {\n    var board = new Board({id: ++boardId, server: server})\n    client.join(board.channel())\n    board.addPlayer(player)\n    boards.push(board)\n    client.board = board\n    board.run()\n  })\n  \n  // player is in test and wants to go back to editing\n  client.on('stop', () => {\n    var board = client.board\n    board.removePlayer(player)\n    client.leave(board.channel())\n    if(board.numPlayers() === 0){\n      board.stop()\n      _.remove(boards,function(b){return b.id === board.id})\n    }\n    delete client.board\n  })\n  \n  // player is in editing and wants to go to the arena (compete against other robots)\n  client.on('play', () => {\n    // if no open board, create a new one\n    // or, add player to existing open board\n  })\n  \n  // player is in the arena and wants to go back to editing\n  client.on('leave', () => {\n    \n  })  \n  \n  // player has left entirely\n  client.on('disconnect', () => {\n    _.remove(players,function (p) {\n      return p.id === player.id\n    })\n    console.log('[%s] has left', player.name)\n    server.emit('status', '[' + player.id + '] <font color=\"red\">' + player.name + '</font> has left.')\n    if(client.hasOwnProperty('board')){\n      var board = client.board\n      board.removePlayer(player)\n      if(board.numPlayers() === 0){\n        _.remove(function(b){return b.id === board.id})\n      }\n    }\n  })\n})\n\n/*\n * Start Service\n */\nhttp.listen(port, function(){\n    console.log('listening on *:%d', port)\n})\n"
+      ]
+    },
+    "mtime": 1493082349623
+  },
+  "{\"filename\":\"/app/player.js\",\"env\":{},\"retainLines\":false,\"highlightCode\":true,\"suppressDeprecationMessages\":false,\"presets\":[],\"plugins\":[[[],null]],\"ignore\":[],\"code\":true,\"metadata\":true,\"ast\":true,\"comments\":true,\"compact\":\"auto\",\"minified\":false,\"sourceRoot\":\"/app\",\"babelrc\":true,\"sourceType\":\"module\",\"moduleIds\":false,\"passPerPreset\":false,\"parserOpts\":false,\"generatorOpts\":false}:6.24.1": {
+    "metadata": {
+      "usedHelpers": [],
+      "marked": [],
+      "modules": {
+        "imports": [],
+        "exports": {
+          "exported": [],
+          "specifiers": []
+        }
+      }
+    },
+    "options": {
+      "filename": "/app/player.js",
+      "filenameRelative": "/app/player.js",
+      "env": {},
+      "retainLines": false,
+      "highlightCode": true,
+      "suppressDeprecationMessages": false,
+      "presets": [],
+      "plugins": [
+        [
+          [],
+          null
+        ]
+      ],
+      "ignore": [],
+      "code": true,
+      "metadata": true,
+      "ast": false,
+      "comments": true,
+      "compact": "auto",
+      "minified": false,
+      "sourceMaps": "both",
+      "sourceMapTarget": "player.js",
+      "sourceFileName": "player.js",
+      "sourceRoot": "/app",
+      "babelrc": false,
+      "sourceType": "module",
+      "moduleRoot": "/app",
+      "moduleIds": false,
+      "passPerPreset": false,
+      "parserOpts": false,
+      "generatorOpts": false,
+      "basename": "player"
+    },
+    "ignored": false,
+    "code": "\"use strict\";\n\nconst _ = require('lodash');\n\nclass Player {\n  constructor(options) {\n    _.assign(this, options);\n    return this;\n  }\n}\n\nmodule.exports = Player;\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbInBsYXllci5qcyJdLCJuYW1lcyI6WyJfIiwicmVxdWlyZSIsIlBsYXllciIsImNvbnN0cnVjdG9yIiwib3B0aW9ucyIsImFzc2lnbiIsIm1vZHVsZSIsImV4cG9ydHMiXSwibWFwcGluZ3MiOiJBQUFBOztBQUVBLE1BQU1BLElBQUlDLFFBQVEsUUFBUixDQUFWOztBQUVBLE1BQU1DLE1BQU4sQ0FBYTtBQUNYQyxjQUFZQyxPQUFaLEVBQXFCO0FBQ25CSixNQUFFSyxNQUFGLENBQVMsSUFBVCxFQUFlRCxPQUFmO0FBQ0EsV0FBTyxJQUFQO0FBQ0Q7QUFKVTs7QUFPYkUsT0FBT0MsT0FBUCxHQUFpQkwsTUFBakIiLCJmaWxlIjoicGxheWVyLmpzIiwic291cmNlUm9vdCI6Ii9hcHAiLCJzb3VyY2VzQ29udGVudCI6WyJcInVzZSBzdHJpY3RcIlxuXG5jb25zdCBfID0gcmVxdWlyZSgnbG9kYXNoJylcblxuY2xhc3MgUGxheWVyIHtcbiAgY29uc3RydWN0b3Iob3B0aW9ucykge1xuICAgIF8uYXNzaWduKHRoaXMsIG9wdGlvbnMpXG4gICAgcmV0dXJuIHRoaXNcbiAgfVxufVxuXG5tb2R1bGUuZXhwb3J0cyA9IFBsYXllciJdfQ==",
+    "ast": null,
+    "map": {
+      "version": 3,
+      "sources": [
+        "player.js"
+      ],
+      "names": [
+        "_",
+        "require",
+        "Player",
+        "constructor",
+        "options",
+        "assign",
+        "module",
+        "exports"
+      ],
+      "mappings": "AAAA;;AAEA,MAAMA,IAAIC,QAAQ,QAAR,CAAV;;AAEA,MAAMC,MAAN,CAAa;AACXC,cAAYC,OAAZ,EAAqB;AACnBJ,MAAEK,MAAF,CAAS,IAAT,EAAeD,OAAf;AACA,WAAO,IAAP;AACD;AAJU;;AAObE,OAAOC,OAAP,GAAiBL,MAAjB",
+      "file": "player.js",
+      "sourceRoot": "/app",
+      "sourcesContent": [
+        "\"use strict\"\n\nconst _ = require('lodash')\n\nclass Player {\n  constructor(options) {\n    _.assign(this, options)\n    return this\n  }\n}\n\nmodule.exports = Player"
+      ]
+    },
+    "mtime": 1493077737819
+  },
+  "{\"filename\":\"/app/board.js\",\"env\":{},\"retainLines\":false,\"highlightCode\":true,\"suppressDeprecationMessages\":false,\"presets\":[],\"plugins\":[[[],null]],\"ignore\":[],\"code\":true,\"metadata\":true,\"ast\":true,\"comments\":true,\"compact\":\"auto\",\"minified\":false,\"sourceRoot\":\"/app\",\"babelrc\":true,\"sourceType\":\"module\",\"moduleIds\":false,\"passPerPreset\":false,\"parserOpts\":false,\"generatorOpts\":false}:6.24.1": {
+    "metadata": {
+      "usedHelpers": [],
+      "marked": [],
+      "modules": {
+        "imports": [],
+        "exports": {
+          "exported": [],
+          "specifiers": []
+        }
+      }
+    },
+    "options": {
+      "filename": "/app/board.js",
+      "filenameRelative": "/app/board.js",
+      "env": {},
+      "retainLines": false,
+      "highlightCode": true,
+      "suppressDeprecationMessages": false,
+      "presets": [],
+      "plugins": [
+        [
+          [],
+          null
+        ]
+      ],
+      "ignore": [],
+      "code": true,
+      "metadata": true,
+      "ast": false,
+      "comments": true,
+      "compact": "auto",
+      "minified": false,
+      "sourceMaps": "both",
+      "sourceMapTarget": "board.js",
+      "sourceFileName": "board.js",
+      "sourceRoot": "/app",
+      "babelrc": false,
+      "sourceType": "module",
+      "moduleRoot": "/app",
+      "moduleIds": false,
+      "passPerPreset": false,
+      "parserOpts": false,
+      "generatorOpts": false,
+      "basename": "board"
+    },
+    "ignored": false,
+    "code": "\"use strict\";\n\nconst _ = require('lodash');\nconst util = require('util');\nconst sleep = require('./sleep');\n\nconst DIRECTION = {\n  north: 0,\n  east: 1,\n  south: 2,\n  west: 3\n};\n\nconst CARDINAL = ['North', 'East', 'South', 'West'];\n\nclass Board {\n  constructor(options) {\n    this.players = [];\n    this.size = 25;\n    //    this.winner = 3\n    this.open = false;\n    _.assign(this, options);\n    return this;\n  }\n\n  channel() {\n    return 'board-' + this.id;\n  }\n\n  broadcast(event, data) {\n    this.server.to(this.channel()).emit(event, data);\n  }\n\n  update(player) {\n    this.broadcast('update', player);\n  }\n\n  refresh() {\n    var me = this;\n    //console.log(me.players)\n    _.forEach(me.players, function (p) {\n      me.update(p);\n    });\n  }\n\n  hasPlayer(player) {\n    return _.find(this.players, function (p) {\n      return p.id === player.id;\n    });\n  }\n\n  numPlayers() {\n    return this.players.length;\n  }\n\n  addPlayer(player) {\n    player.tagged = 0;\n    player.score = 0;\n    player.direction = _.random(DIRECTION.north, DIRECTION.west);\n    player.directionStr = CARDINAL[player.direction];\n    do {\n      player.x = _.random(0, this.size - 1);\n      player.y = _.random(0, this.size - 1);\n    } while (this.isCellOccupied(player.x, player.y));\n    player.channel = this.channel();\n    this.players.push(player);\n    this.refresh();\n    return player;\n  }\n\n  removePlayer(player) {\n    if (this.hasPlayer(player)) {\n      _.remove(this.players, p => {\n        return p.id === player.id;\n      });\n      delete player.channel;\n      this.broadcast('remove', player);\n    }\n  }\n\n  isCellOccupied(x, y) {\n    return _.find(this.players, function (p) {\n      return p.x === x && p.y === y;\n    });\n  }\n\n  turnLeft(player) {\n    //console.log('start: x %d y %d d %s', player.x, player.y, player.directionStr)\n    player.direction -= 1;\n    if (player.direction < DIRECTION.north) {\n      player.direction = DIRECTION.west;\n    }\n    player.directionStr = CARDINAL[player.direction];\n    this.update(player);\n    //console.log('  end: x %d y %d d %s', player.x, player.y, player.directionStr)\n    return true;\n  }\n\n  turnRight(player) {\n    //console.log('start: x %d y %d d %s', player.x, player.y, player.directionStr)\n    player.direction += 1;\n    if (player.direction > DIRECTION.west) {\n      player.direction = DIRECTION.north;\n    }\n    player.directionStr = CARDINAL[player.direction];\n    this.update(player);\n    //console.log('  end: x %d y %d d %s', player.x, player.y, player.directionStr)\n    return true;\n  }\n\n  moveForward(player) {\n    var x = player.x;\n    var y = player.y;\n    //console.log('start: x %d y %d d %s', player.x, player.y, player.directionStr)\n    switch (player.direction) {\n      case DIRECTION.north:\n        y += 1;\n        break;\n      case DIRECTION.east:\n        x += 1;\n        break;\n      case DIRECTION.south:\n        y -= 1;\n        break;\n      case DIRECTION.west:\n        x -= 1;\n        break;\n    }\n    if (x < 0 || x >= this.size || y < 0 || y >= this.size || this.isCellOccupied(x, y)) {\n      //console.log('rejected')\n      return false;\n    }\n    player.x = x;\n    player.y = y;\n    //console.log('  end: x %d y %d d %s', player.x, player.y, player.directionStr)    \n    this.update(player);\n    return true;\n  }\n\n  tag(player) {\n    var x = player.x;\n    var y = player.y;\n    switch (player.direction) {\n      case DIRECTION.north:\n        y += 1;\n        break;\n      case DIRECTION.east:\n        x += 1;\n        break;\n      case DIRECTION.south:\n        y -= 1;\n        break;\n      case DIRECTION.west:\n        x -= 1;\n        break;\n    }\n    //console.log('  tag: x %d y %d d %s', x, y, player.directionStr)\n    var target = this.isCellOccupied(x, y);\n    if (target) {\n      target.tagged += 1;\n      player.score += 1;\n      //console.log(util.format('[%s] was tagged by [%s]!', target.name, player.name))\n      this.update(target);\n      this.update(player);\n      this.broadcast('status', util.format('[%s] was tagged by [%s]!', target.name, player.name));\n      /*\n      if(player.score >= this.winner){\n        this.broadcast('winner',player)\n        console.log(util.format('[%s] has won!', player.name))\n      }\n      */\n      return true;\n    }\n    return false;\n  }\n\n  // returns 0 if there are no bots in a straight line in front of where bot is facing\n  // otherwise, returns number of 'moveForward' commands to bring bot to next bot\n  /*\n  distanceToBot(player){\n  }\n  */\n\n  // returns number of 'moveForward' commands to next wall\n  distanceToWall(player) {\n    var result = -1;\n    switch (player.direction) {\n      case DIRECTION.north:\n        result = this.size - 1 - player.y;\n        break;\n      case DIRECTION.east:\n        result = this.size - 1 - player.x;\n        break;\n      case DIRECTION.south:\n        result = player.y;\n        break;\n      case DIRECTION.west:\n        result = player.x;\n        break;\n    }\n    console.log('Distance to wall for (%d,%d) is %d', player.x, player.y, result);\n    return result;\n  }\n\n  run() {\n    this.loop = true;\n    this.done = false;\n    this._run();\n    var timer;\n    timer = setInterval(() => {\n      if (!this.loop) {\n        clearInterval(timer);\n      } else if (this.done === true) {\n        this.done = false;\n        this._run();\n      }\n    }, 100);\n  }\n\n  _run() {\n    var me = this;\n    var commands = [];\n\n    var sockets_in_room = me.server.nsps['/'].adapter.rooms[me.channel()];\n    var promises = [];\n    var status = {};\n    for (var socketId in sockets_in_room.sockets) {\n      var client = me.server.sockets.connected[socketId];\n      if (client.hasOwnProperty('player')) {\n        //console.log('request command from [%s] at %s',client.player.name,socketId)\n        status[client.id] = undefined;\n        var promise = new Promise((resolve, reject) => {\n          client.emit('request command', me.channel(), command => {\n            commands.push({ player: client.player, command: command, client: client });\n            status[client.id].status = true;\n            resolve(1);\n          });\n          setTimeout(() => {\n            status[client.id].status = false;\n            reject(client.player);\n          }, 500);\n        });\n        promises.push(promise);\n        status[client.id] = { status: undefined, promise: promise };\n      }\n    }\n    Promise.all(promises).then(() => {\n      var responses = 0;\n      _.forEach(commands, function (cmd) {\n        var result = false;\n        responses += 1;\n        switch (cmd.command) {\n          case 'turn left':\n            result = me.turnLeft(cmd.player);\n            break;\n          case 'turn right':\n            result = me.turnRight(cmd.player);\n            break;\n          case 'move forward':\n            result = me.moveForward(cmd.player);\n            break;\n          case 'tag':\n            result = me.tag(cmd.player);\n            break;\n          case 'distance to wall':\n            result = me.distanceToWall(cmd.player);\n            break;\n          default:\n            console.log('Unrecognized command \\'%s\\' from [%s]', cmd.command, cmd.player.name);\n        }\n        //console.log('responses %d of %d', responses, promises.length)\n        if (responses === promises.length) {\n          me.done = true;\n        }\n        cmd.client.emit('result', { command: cmd.command, result: result });\n      });\n    }).catch(player => {\n      console.log('Timeout waiting for [%s] to respond', player.name);\n      me.done = true;\n    });\n  }\n\n  stop() {\n    this.loop = false;\n  }\n}\n\nmodule.exports = Board;\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbImJvYXJkLmpzIl0sIm5hbWVzIjpbIl8iLCJyZXF1aXJlIiwidXRpbCIsInNsZWVwIiwiRElSRUNUSU9OIiwibm9ydGgiLCJlYXN0Iiwic291dGgiLCJ3ZXN0IiwiQ0FSRElOQUwiLCJCb2FyZCIsImNvbnN0cnVjdG9yIiwib3B0aW9ucyIsInBsYXllcnMiLCJzaXplIiwib3BlbiIsImFzc2lnbiIsImNoYW5uZWwiLCJpZCIsImJyb2FkY2FzdCIsImV2ZW50IiwiZGF0YSIsInNlcnZlciIsInRvIiwiZW1pdCIsInVwZGF0ZSIsInBsYXllciIsInJlZnJlc2giLCJtZSIsImZvckVhY2giLCJwIiwiaGFzUGxheWVyIiwiZmluZCIsIm51bVBsYXllcnMiLCJsZW5ndGgiLCJhZGRQbGF5ZXIiLCJ0YWdnZWQiLCJzY29yZSIsImRpcmVjdGlvbiIsInJhbmRvbSIsImRpcmVjdGlvblN0ciIsIngiLCJ5IiwiaXNDZWxsT2NjdXBpZWQiLCJwdXNoIiwicmVtb3ZlUGxheWVyIiwicmVtb3ZlIiwidHVybkxlZnQiLCJ0dXJuUmlnaHQiLCJtb3ZlRm9yd2FyZCIsInRhZyIsInRhcmdldCIsImZvcm1hdCIsIm5hbWUiLCJkaXN0YW5jZVRvV2FsbCIsInJlc3VsdCIsImNvbnNvbGUiLCJsb2ciLCJydW4iLCJsb29wIiwiZG9uZSIsIl9ydW4iLCJ0aW1lciIsInNldEludGVydmFsIiwiY2xlYXJJbnRlcnZhbCIsImNvbW1hbmRzIiwic29ja2V0c19pbl9yb29tIiwibnNwcyIsImFkYXB0ZXIiLCJyb29tcyIsInByb21pc2VzIiwic3RhdHVzIiwic29ja2V0SWQiLCJzb2NrZXRzIiwiY2xpZW50IiwiY29ubmVjdGVkIiwiaGFzT3duUHJvcGVydHkiLCJ1bmRlZmluZWQiLCJwcm9taXNlIiwiUHJvbWlzZSIsInJlc29sdmUiLCJyZWplY3QiLCJjb21tYW5kIiwic2V0VGltZW91dCIsImFsbCIsInRoZW4iLCJyZXNwb25zZXMiLCJjbWQiLCJjYXRjaCIsInN0b3AiLCJtb2R1bGUi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LENBQWdCLFFBQWhCLEVBQXlCLEVBQUMwRCxTQUFTSyxJQUFJTCxPQUFkLEVBQXVCM0IsUUFBUUEsTUFBL0IsRUFBekI7QUFDRCxPQTNCRDtBQTRCRCxLQTlCRCxFQStCQ2lDLEtBL0JELENBK0JROUQsTUFBRCxJQUFZO0FBQ2pCOEIsY0FBUUMsR0FBUixDQUFZLHFDQUFaLEVBQW1EL0IsT0FBTzJCLElBQTFEO0FBQ0F6QixTQUFHZ0MsSUFBSCxHQUFVLElBQVY7QUFDRCxLQWxDRDtBQW1DRDs7QUFFRDZCLFNBQU07QUFDSixTQUFLOUIsSUFBTCxHQUFZLEtBQVo7QUFDRDtBQXRRUzs7QUF5UVorQixPQUFPQyxPQUFQLEdBQWlCakYsS0FBakIiLCJmaWxlIjoiYm9hcmQuanMiLCJzb3VyY2VSb290IjoiL2FwcCIsInNvdXJjZXNDb250ZW50IjpbIlwidXNlIHN0cmljdFwiXG5cbmNvbnN0IF8gPSByZXF1aXJlKCdsb2Rhc2gnKVxuY29uc3QgdXRpbCA9IHJlcXVpcmUoJ3V0aWwnKVxuY29uc3Qgc2xlZXAgPSByZXF1aXJlKCcuL3NsZWVwJylcblxuY29uc3QgRElSRUNUSU9OID0ge1xuICBub3J0aDogMCxcbiAgZWFzdDogMSxcbiAgc291dGg6IDIsXG4gIHdlc3Q6IDNcbn1cblxuY29uc3QgQ0FSRElOQUwgPSBbXG4gICdOb3J0aCcsXG4gICdFYXN0JyxcbiAgJ1NvdXRoJyxcbiAgJ1dlc3QnXG5dXG5cbmNsYXNzIEJvYXJkIHtcbiAgY29uc3RydWN0b3Iob3B0aW9ucykge1xuICAgIHRoaXMucGxheWVycyA9IFtdXG4gICAgdGhpcy5zaXplID0gMjVcbi8vICAgIHRoaXMud2lubmVyID0gM1xuICAgIHRoaXMub3BlbiA9IGZhbHNlXG4gICAgXy5hc3NpZ24odGhpcywgb3B0aW9ucylcbiAgICByZXR1cm4gdGhpc1xuICB9XG4gIFxuICBjaGFubmVsKCl7XG4gICAgcmV0dXJuICdib2FyZC0nICsgdGhpcy5pZFxuICB9XG5cbiAgYnJvYWRjYXN0KGV2ZW50LGRhdGEpe1xuICAgIHRoaXMuc2VydmVyLnRvKHRoaXMuY2hhbm5lbCgpKS5lbWl0KGV2ZW50LGRhdGEpXG4gIH1cblxuICB1cGRhdGUocGxheWVyKXtcbiAgICB0aGlzLmJyb2FkY2FzdCgndXBkYXRlJyxwbGF5ZXIpXG4gIH1cbiAgXG4gIHJlZnJlc2goKSB7XG4gICAgdmFyIG1lID0gdGhpc1xuICAgIC8vY29uc29sZS5sb2cobWUucGxheWVycylcbiAgICBfLmZvckVhY2gobWUucGxheWVycywgZnVuY3Rpb24ocCkgeyBtZS51cGRhdGUocCkgfSlcbiAgfVxuXG4gIGhhc1BsYXllcihwbGF5ZXIpe1xuICAgIHJldHVybiBfLmZpbmQodGhpcy5wbGF5ZXJzLCBmdW5jdGlvbihwKSB7IHJldHVybiBwLmlkID09PSBwbGF5ZXIuaWQgfSlcbiAgfVxuICBcbiAgbnVtUGxheWVycygpIHtcbiAgICByZXR1cm4gdGhpcy5wbGF5ZXJzLmxlbmd0aFxuICB9XG4gIFxuICBhZGRQbGF5ZXIocGxheWVyKXtcbiAgICBwbGF5ZXIudGFnZ2VkID0gMFxuICAgIHBsYXllci5zY29yZSA9IDBcbiAgICBwbGF5ZXIuZGlyZWN0aW9uID0gXy5yYW5kb20oRElSRUNUSU9OLm5vcnRoLERJUkVDVElPTi53ZXN0KVxuICAgIHBsYXllci5kaXJlY3Rpb25TdHIgPSBDQVJESU5BTFtwbGF5ZXIuZGlyZWN0aW9uXVxuICAgIGRvIHtcbiAgICAgIHBsYXllci54ID0gXy5yYW5kb20oMCwgdGhpcy5zaXplLTEpXG4gICAgICBwbGF5ZXIueSA9IF8ucmFuZG9tKDAsIHRoaXMuc2l6ZS0xKVxuICAgIH0gd2hpbGUodGhpcy5pc0NlbGxPY2N1cGllZChwbGF5ZXIueCxwbGF5ZXIueSkpXG4gICAgcGxheWVyLmNoYW5uZWwgPSB0aGlzLmNoYW5uZWwoKVxuICAgIHRoaXMucGxheWVycy5wdXNoKHBsYXllcilcbiAgICB0aGlzLnJlZnJlc2goKVxuICAgIHJldHVybiBwbGF5ZXJcbiAgfVxuICBcbiAgcmVtb3ZlUGxheWVyKHBsYXllcil7XG4gICAgaWYodGhpcy5oYXNQbGF5ZXIocGxheWVyKSl7XG4gICAgICBfLnJlbW92ZSh0aGlzLnBsYXllcnMsKHApID0+IHsgcmV0dXJuIHAuaWQgPT09IHBsYXllci5pZCB9KVxuICAgICAgZGVsZXRlIHBsYXllci5jaGFubmVsXG4gICAgICB0aGlzLmJyb2FkY2FzdCgncmVtb3ZlJyxwbGF5ZXIpXG4gICAgfVxuICB9XG4gICAgICAgICAgICAgICAgICAgXG4gIGlzQ2VsbE9jY3VwaWVkKHgseSl7XG4gICAgcmV0dXJuIF8uZmluZCh0aGlzLnBsYXllcnMsZnVuY3Rpb24ocCkgeyByZXR1cm4gcC54ID09PSB4ICYmIHAueSA9PT0geSB9KVxuICB9XG4gIFxuICB0dXJuTGVmdChwbGF5ZXIpe1xuICAgIC8vY29uc29sZS5sb2coJ3N0YXJ0OiB4ICVkIHkgJWQgZCAlcycsIHBsYXllci54LCBwbGF5ZXIueSwgcGxheWVyLmRpcmVjdGlvblN0cilcbiAgICBwbGF5ZXIuZGlyZWN0aW9uIC09IDFcbiAgICBpZihwbGF5ZXIuZGlyZWN0aW9uIDwgRElSRUNUSU9OLm5vcnRoKSB7XG4gICAgICBwbGF5ZXIuZGlyZWN0aW9uID0gRElSRUNUSU9OLndlc3RcbiAgICB9XG4gICAgcGxheWVyLmRpcmVjdGlvblN0ciA9IENBUkRJTkFMW3BsYXllci5kaXJlY3Rpb25dXG4gICAgdGhpcy51cGRhdGUocGxheWVyKVxuICAgIC8vY29uc29sZS5sb2coJyAgZW5kOiB4ICVkIHkgJWQgZCAlcycsIHBsYXllci54LCBwbGF5ZXIueSwgcGxheWVyLmRpcmVjdGlvblN0cilcbiAgICByZXR1cm4gdHJ1ZVxuICB9XG4gIFxuICB0dXJuUmlnaHQocGxheWVyKXtcbiAgICAvL2NvbnNvbGUubG9nKCdzdGFydDogeCAlZCB5ICVkIGQgJXMnLCBwbGF5ZXIueCwgcGxheWVyLnksIHBsYXllci5kaXJlY3Rpb25TdHIpXG4gICAgcGxheWVyLmRpcmVjdGlvbiArPSAxXG4gICAgaWYocGxheWVyLmRpcmVjdGlvbiA+IERJUkVDVElPTi53ZXN0KSB7XG4gICAgICBwbGF5ZXIuZGlyZWN0aW9uID0gRElSRUNUSU9OLm5vcnRoXG4gICAgfVxuICAgIHBsYXllci5kaXJlY3Rpb25TdHIgPSBDQVJESU5BTFtwbGF5ZXIuZGlyZWN0aW9uXVxuICAgIHRoaXMudXBkYXRlKHBsYXllcilcbiAgICAvL2NvbnNvbGUubG9nKCcgIGVuZDogeCAlZCB5ICVkIGQgJXMnLCBwbGF5ZXIueCwgcGxheWVyLnksIHBsYXllci5kaXJlY3Rpb25TdHIpXG4gICAgcmV0dXJuIHRydWVcbiAgfVxuICBcbiAgbW92ZUZvcndhcmQocGxheWVyKXtcbiAgICB2YXIgeCA9IHBsYXllci54XG4gICAgdmFyIHkgPSBwbGF5ZXIueVxuICAgIC8vY29uc29sZS5sb2coJ3N0YXJ0OiB4ICVkIHkgJWQgZCAlcycsIHBsYXllci54LCBwbGF5ZXIueSwgcGxheWVyLmRpcmVjdGlvblN0cilcbiAgICBzd2l0Y2gocGxheWVyLmRpcmVjdGlvbil7XG4gICAgICBjYXNlIERJUkVDVElPTi5ub3J0aDpcbiAgICAgICAgeSArPSAxXG4gICAgICAgIGJyZWFrXG4gICAgICBjYXNlIERJUkVDVElPTi5lYXN0OlxuICAgICAgICB4ICs9IDFcbiAgICAgICAgYnJlYWtcbiAgICAgIGNhc2UgRElSRUNUSU9OLnNvdXRoOlxuICAgICAgICB5IC09IDFcbiAgICAgICAgYnJlYWtcbiAgICAgIGNhc2UgRElSRUNUSU9OLndlc3Q6XG4gICAgICAgIHggLT0gMVxuICAgICAgICBicmVhaztcbiAgICB9XG4gICAgaWYoeDwwIHx8IHggPj0gdGhpcy5zaXplIHx8IHkgPCAwIHx8IHkgPj0gdGhpcy5zaXplIHx8IHRoaXMuaXNDZWxsT2NjdXBpZWQoeCx5KSl7XG4gICAgICAvL2NvbnNvbGUubG9nKCdyZWplY3RlZCcpXG4gICAgICByZXR1cm4gZmFsc2VcbiAgICB9XG4gICAgcGxheWVyLnggPSB4XG4gICAgcGxheWVyLnkgPSB5XG4gICAgLy9jb25zb2xlLmxvZygnICBlbmQ6IHggJWQgeSAlZCBkICVzJywgcGxheWVyLngsIHBsYXllci55LCBwbGF5ZXIuZGlyZWN0aW9uU3RyKSAgICBcbiAgICB0aGlzLnVwZGF0ZShwbGF5ZXIpXG4gICAgcmV0dXJuIHRydWVcbiAgfVxuICBcbiAgdGFnKHBsYXllcil7XG4gICAgdmFyIHggPSBwbGF5ZXIueFxuICAgIHZhciB5ID0gcGxheWVyLnlcbiAgICBzd2l0Y2gocGxheWVyLmRpcmVjdGlvbil7XG4gICAgICBjYXNlIERJUkVDVElPTi5ub3J0aDpcbiAgICAgICAgeSArPSAxXG4gICAgICAgIGJyZWFrXG4gICAgICBjYXNlIERJUkVDVElPTi5lYXN0OlxuICAgICAgICB4ICs9IDFcbiAgICAgICAgYnJlYWtcbiAgICAgIGNhc2UgRElSRUNUSU9OLnNvdXRoOlxuICAgICAgICB5IC09IDFcbiAgICAgICAgYnJlYWtcbiAgICAgIGNhc2UgRElSRUNUSU9OLndlc3Q6XG4gICAgICAgIHggLT0gMVxuICAgICAgICBicmVhaztcbiAgICB9XG4gICAgLy9jb25zb2xlLmxvZygnICB0YWc6IHggJWQgeSAlZCBkICVzJywgeCwgeSwgcGxheWVyLmRpcmVjdGlvblN0cilcbiAgICB2YXIgdGFyZ2V0ID0gdGhpcy5pc0NlbGxPY2N1cGllZCh4LHkpXG4gICAgaWYodGFyZ2V0KXtcbiAgICAgIHRhcmdldC50YWdnZWQgKz0gMVxuICAgICAgcGxheWVyLnNjb3JlICs9IDFcbiAgICAgIC8vY29uc29sZS5sb2codXRpbC5mb3JtYXQoJ1slc10gd2FzIHRhZ2dlZCBieSBbJXNdIScsIHRhcmdldC5uYW1lLCBwbGF5ZXIubmFtZSkpXG4gICAgICB0aGlzLnVwZGF0ZSh0YXJnZXQpXG4gICAgICB0aGlzLnVwZGF0ZShwbGF5ZXIpXG4gICAgICB0aGlzLmJyb2FkY2FzdCgnc3RhdHVzJyx1dGlsLmZvcm1hdCgnWyVzXSB3YXMgdGFnZ2VkIGJ5IFslc10hJywgdGFyZ2V0Lm5hbWUsIHBsYXllci5uYW1lKSlcbiAgICAgIC8qXG4gICAgICBpZihwbGF5ZXIuc2NvcmUgPj0gdGhpcy53aW5uZXIpe1xuICAgICAgICB0aGlzLmJyb2FkY2FzdCgnd2lubmVyJyxwbGF5ZXIpXG4gICAgICAgIGNvbnNvbGUubG9nKHV0aWwuZm9ybWF0KCdbJXNdIGhhcyB3b24hJywgcGxheWVyLm5hbWUpKVxuICAgICAgfVxuICAgICAgKi9cbiAgICAgIHJldHVybiB0cnVlXG4gICAgfVxuICAgIHJldHVybiBmYWxzZVxuICB9XG4gIFxuICAvLyByZXR1cm5zIDAgaWYgdGhlcmUgYXJlIG5vIGJvdHMgaW4gYSBzdHJhaWdodCBsaW5lIGluIGZyb250IG9mIHdoZXJlIGJvdCBpcyBmYWNpbmdcbiAgLy8gb3RoZXJ3aXNlLCByZXR1cm5zIG51bWJlciBvZiAnbW92ZUZvcndhcmQnIGNvbW1hbmRzIHRvIGJyaW5nIGJvdCB0byBuZXh0IGJvdFxuICAvKlxuICBkaXN0YW5jZVRvQm90KHBsYXllcil7XG4gIH1cbiAgKi9cbiAgXG4gIC8vIHJldHVybnMgbnVtYmVyIG9mICdtb3ZlRm9yd2FyZCcgY29tbWFuZHMgdG8gbmV4dCB3YWxsXG4gIGRpc3RhbmNlVG9XYWxsKHBsYXllcil7XG4gICAgdmFyIHJlc3VsdCA9IC0xXG4gICAgc3dpdGNoKHBsYXllci5kaXJlY3Rpb24pe1xuICAgICAgY2FzZSBESVJFQ1RJT04ubm9ydGg6XG4gICAgICAgIHJlc3VsdCA9IHRoaXMuc2l6ZSAtIDEgLSBwbGF5ZXIueTtcbiAgICAgICAgYnJlYWs7XG4gICAgICBjYXNlIERJUkVDVElPTi5lYXN0OlxuICAgICAgICByZXN1bHQgPSB0aGlzLnNpemUgLSAxIC0gcGxheWVyLng7XG4gICAgICAgIGJyZWFrO1xuICAgICAgY2FzZSBESVJFQ1RJT04uc291dGg6XG4gICAgICAgIHJlc3VsdCA9IHBsYXllci55O1xuICAgICAgICBicmVhaztcbiAgICAgIGNhc2UgRElSRUNUSU9OLndlc3Q6XG4gICAgICAgIHJlc3VsdCA9IHBsYXllci54O1xuICAgICAgICBicmVhaztcbiAgICB9XG4gICAgY29uc29sZS5sb2coJ0Rpc3RhbmNlIHRvIHdhbGwgZm9yICglZCwlZCkgaXMgJWQnLCBwbGF5ZXIueCwgcGxheWVyLnksIHJlc3VsdClcbiAgICByZXR1cm4gcmVzdWx0XG4gIH1cbiAgXG4gIHJ1bigpe1xuICAgIHRoaXMubG9vcCA9IHRydWVcbiAgICB0aGlzLmRvbmUgPSBmYWxzZVxuICAgIHRoaXMuX3J1bigpXG4gICAgdmFyIHRpbWVyXG4gICAgdGltZXIgPSBzZXRJbnRlcnZhbCgoKSA9PiB7XG4gICAgICBpZighdGhpcy5sb29wKSB7XG4gICAgICAgIGNsZWFySW50ZXJ2YWwodGltZXIpXG4gICAgICB9IGVsc2UgaWYodGhpcy5kb25lID09PSB0cnVlKSB7IFxuICAgICAgICB0aGlzLmRvbmUgPSBmYWxzZVxuICAgICAgICB0aGlzLl9ydW4oKVxuICAgICAgfVxuICAgIH0sIDEwMClcbiAgfVxuICAgIFxuICBfcnVuKCl7XG4gICAgdmFyIG1lID0gdGhpc1xuICAgIHZhciBjb21tYW5kcyA9IFtdXG4gICAgICBcbiAgICB2YXIgc29ja2V0c19pbl9yb29tID0gbWUuc2VydmVyLm5zcHNbJy8nXS5hZGFwdGVyLnJvb21zW21lLmNoYW5uZWwoKV1cbiAgICB2YXIgcHJvbWlzZXMgPSBbXVxuICAgIHZhciBzdGF0dXMgPSB7fVxuICAgIGZvciAodmFyIHNvY2tldElkIGluIHNvY2tldHNfaW5fcm9vbS5zb2NrZXRzKSB7XG4gICAgICB2YXIgY2xpZW50ID0gbWUuc2VydmVyLnNvY2tldHMuY29ubmVjdGVkW3NvY2tldElkXVxuICAgICAgaWYoY2xpZW50Lmhhc093blByb3BlcnR5KCdwbGF5ZXInKSl7XG4gICAgICAgIC8vY29uc29sZS5sb2coJ3JlcXVlc3QgY29tbWFuZCBmcm9tIFslc10gYXQgJXMnLGNsaWVudC5wbGF5ZXIubmFtZSxzb2NrZXRJZClcbiAgICAgICAgc3RhdHVzW2NsaWVudC5pZF0gPSB1bmRlZmluZWRcbiAgICAgICAgdmFyIHByb21pc2UgPSBuZXcgUHJvbWlzZSgocmVzb2x2ZSxyZWplY3QpID0+IHtcbiAgICAgICAgICBjbGllbnQuZW1pdCgncmVxdWVzdCBjb21tYW5kJyxtZS5jaGFubmVsKCksKGNvbW1hbmQpID0+IHtcbiAgICAgICAgICAgIGNvbW1hbmRzLnB1c2goe3BsYXllcjogY2xpZW50LnBsYXllciwgY29tbWFuZDogY29tbWFuZCwgY2xpZW50OiBjbGllbnR9KVxuICAgICAgICAgICAgc3RhdHVzW2NsaWVudC5pZF0uc3RhdHVzID0gdHJ1ZVxuICAgICAgICAgICAgcmVzb2x2ZSgxKVxuICAgICAgICAgIH0pXG4gICAgICAgICAgc2V0VGltZW91dCgoKSA9PiB7XG4gICAgICAgICAgICBzdGF0dXNbY2xpZW50LmlkXS5zdGF0dXMgPSBmYWxzZVxuICAgICAgICAgICAgcmVqZWN0KGNsaWVudC5wbGF5ZXIpIFxuICAgICAgICAgIH0sNTAwKVxuICAgICAgICB9KVxuICAgICAgICBwcm9taXNlcy5wdXNoKHByb21pc2UpXG4gICAgICAgIHN0YXR1c1tjbGllbnQuaWRdID0ge3N0YXR1czogdW5kZWZpbmVkLCBwcm9taXNlOiBwcm9taXNlfVxuICAgICAgfSAgICAgICAgXG4gICAgfVxuICAgIFByb21pc2UuYWxsKHByb21pc2VzKS50aGVuKCgpID0+IHtcbiAgICAgIHZhciByZXNwb25zZXMgPSAwXG4gICAgICBfLmZvckVhY2goY29tbWFuZHMsZnVuY3Rpb24oY21kKXtcbiAgICAgICAgdmFyIHJlc3VsdCA9IGZhbHNlXG4gICAgICAgIHJlc3BvbnNlcyArPSAxXG4gICAgICAgIHN3aXRjaChjbWQuY29tbWFuZCl7XG4gICAgICAgICAgY2FzZSAndHVybiBsZWZ0JzpcbiAgICAgICAgICAgIHJlc3VsdCA9IG1lLnR1cm5MZWZ0KGNtZC5wbGF5ZXIpXG4gICAgICAgICAgICBicmVhaztcbiAgICAgICAgICBjYXNlICd0dXJuIHJpZ2h0JzpcbiAgICAgICAgICAgIHJlc3VsdCA9IG1lLnR1cm5SaWdodChjbWQucGxheWVyKVxuICAgICAgICAgICAgYnJlYWs7XG4gICAgICAgICAgY2FzZSAnbW92ZSBmb3J3YXJkJzpcbiAgICAgICAgICAgIHJlc3VsdCA9IG1lLm1vdmVGb3J3YXJkKGNtZC5wbGF5ZXIpXG4gICAgICAgICAgICBicmVhaztcbiAgICAgICAgICBjYXNlICd0YWcnOlxuICAgICAgICAgICAgcmVzdWx0ID0gbWUudGFnKGNtZC5wbGF5ZXIpXG4gICAgICAgICAgICBicmVhaztcbiAgICAgICAgICBjYXNlICdkaXN0YW5jZSB0byB3YWxsJzpcbiAgICAgICAgICAgIHJlc3VsdCA9IG1lLmRpc3RhbmNlVG9XYWxsKGNtZC5wbGF5ZXIpXG4gICAgICAgICAgICBicmVhaztcbiAgICAgICAgICBkZWZhdWx0OlxuICAgICAgICAgICAgY29uc29sZS5sb2coJ1VucmVjb2duaXplZCBjb21tYW5kIFxcJyVzXFwnIGZyb20gWyVzXScsIGNtZC5jb21tYW5kLCBjbWQucGxheWVyLm5hbWUpXG4gICAgICAgIH1cbiAgICAgICAgLy9jb25zb2xlLmxvZygncmVzcG9uc2VzICVkIG9mICVkJywgcmVzcG9uc2VzLCBwcm9taXNlcy5sZW5ndGgpXG4gICAgICAgIGlmKHJlc3BvbnNlcyA9PT0gcHJvbWlzZXMubGVuZ3RoKXtcbiAgICAgICAgICBtZS5kb25lID0gdHJ1ZVxuICAgICAgICB9XG4gICAgICAgIGNtZC5jbGllbnQuZW1pdCgncmVzdWx0Jyx7Y29tbWFuZDogY21kLmNvbW1hbmQsIHJlc3VsdDogcmVzdWx0fSkgICAgICAgIFxuICAgICAgfSlcbiAgICB9KVxuICAgIC5jYXRjaCgocGxheWVyKSA9PiB7XG4gICAgICBjb25zb2xlLmxvZygnVGltZW91dCB3YWl0aW5nIGZvciBbJXNdIHRvIHJlc3BvbmQnLCBwbGF5ZXIubmFtZSlcbiAgICAgIG1lLmRvbmUgPSB0cnVlXG4gICAgfSlcbiAgfVxuXG4gIHN0b3AoKXtcbiAgICB0aGlzLmxvb3AgPSBmYWxzZVxuICB9XG59XG5cbm1vZHVsZS5leHBvcnRzID0gQm9hcmQiXX0=",
+    "ast": null,
+    "map": {
+      "version": 3,
+      "sources": [
+        "board.js"
+      ],
+      "names": [
+        "_",
+        "require",
+        "util",
+        "sleep",
+        "DIRECTION",
+        "north",
+        "east",
+        "south",
+        "west",
+        "CARDINAL",
+        "Board",
+        "constructor",
+        "options",
+        "players",
+        "size",
+        "open",
+        "assign",
+        "channel",
+        "id",
+        "broadcast",
+        "event",
+        "data",
+        "server",
+        "to",
+        "emit",
+        "update",
+        "player",
+        "refresh",
+        "me",
+        "forEach",
+        "p",
+        "hasPlayer",
+        "find",
+        "numPlayers",
+        "length",
+        "addPlayer",
+        "tagged",
+        "score",
+        "direction",
+        "random",
+        "directionStr",
+        "x",
+        "y",
+        "isCellOccupied",
+        "push",
+        "removePlayer",
+        "remove",
+        "turnLeft",
+        "turnRight",
+        "moveForward",
+        "tag",
+        "target",
+        "format",
+        "name",
+        "distanceToWall",
+        "result",
+        "console",
+        "log",
+        "run",
+        "loop",
+        "done",
+        "_run",
+        "timer",
+        "setInterval",
+        "clearInterval",
+        "commands",
+        "sockets_in_room",
+        "nsps",
+        "adapter",
+        "rooms",
+        "promises",
+        "status",
+        "socketId",
+        "sockets",
+        "client",
+        "connected",
+        "hasOwnProperty",
+        "undefined",
+        "promise",
+        "Promise",
+        "resolve",
+        "reject",
+        "command",
+        "setTimeout",
+        "all",
+        "then",
+        "responses",
+        "cmd",
+        "catch",
+        "stop",
+        "module",
+        "exports"
+      ],
+      "mappings": "AAAA;;AAEA,MAAMA,IAAIC,QAAQ,QAAR,CAAV;AACA,MAAMC,OAAOD,QAAQ,MAAR,CAAb;AACA,MAAME,QAAQF,QAAQ,SAAR,CAAd;;AAEA,MAAMG,YAAY;AAChBC,SAAO,CADS;AAEhBC,QAAM,CAFU;AAGhBC,SAAO,CAHS;AAIhBC,QAAM;AAJU,CAAlB;;AAOA,MAAMC,WAAW,CACf,OADe,EAEf,MAFe,EAGf,OAHe,EAIf,MAJe,CAAjB;;AAOA,MAAMC,KAAN,CAAY;AACVC,cAAYC,OAAZ,EAAqB;AACnB,SAAKC,OAAL,GAAe,EAAf;AACA,SAAKC,IAAL,GAAY,EAAZ;AACJ;AACI,SAAKC,IAAL,GAAY,KAAZ;AACAf,MAAEgB,MAAF,CAAS,IAAT,EAAeJ,OAAf;AACA,WAAO,IAAP;AACD;;AAEDK,YAAS;AACP,WAAO,WAAW,KAAKC,EAAvB;AACD;;AAEDC,YAAUC,KAAV,EAAgBC,IAAhB,EAAqB;AACnB,SAAKC,MAAL,CAAYC,EAAZ,CAAe,KAAKN,OAAL,EAAf,EAA+BO,IAA/B,CAAoCJ,KAApC,EAA0CC,IAA1C;AACD;;AAEDI,SAAOC,MAAP,EAAc;AACZ,SAAKP,SAAL,CAAe,QAAf,EAAwBO,MAAxB;AACD;;AAEDC,YAAU;AACR,QAAIC,KAAK,IAAT;AACA;AACA5B,MAAE6B,OAAF,CAAUD,GAAGf,OAAb,EAAsB,UAASiB,CAAT,EAAY;AAAEF,SAAGH,MAAH,CAAUK,CAAV;AAAc,KAAlD;AACD;;AAEDC,YAAUL,MAAV,EAAiB;AACf,WAAO1B,EAAEgC,IAAF,CAAO,KAAKnB,OAAZ,EAAqB,UAASiB,CAAT,EAAY;AAAE,aAAOA,EAAEZ,EAAF,KAASQ,OAAOR,EAAvB;AAA2B,KAA9D,CAAP;AACD;;AAEDe,eAAa;AACX,WAAO,KAAKpB,OAAL,CAAaqB,MAApB;AACD;;AAEDC,YAAUT,MAAV,EAAiB;AACfA,WAAOU,MAAP,GAAgB,CAAhB;AACAV,WAAOW,KAAP,GAAe,CAAf;AACAX,WAAOY,SAAP,GAAmBtC,EAAEuC,MAAF,CAASnC,UAAUC,KAAnB,EAAyBD,UAAUI,IAAnC,CAAnB;AACAkB,WAAOc,YAAP,GAAsB/B,SAASiB,OAAOY,SAAhB,CAAtB;AACA,OAAG;AACDZ,aAAOe,CAAP,GAAWzC,EAAEuC,MAAF,CAAS,CAAT,EAAY,KAAKzB,IAAL,GAAU,CAAtB,CAAX;AACAY,aAAOgB,CAAP,GAAW1C,EAAEuC,MAAF,CAAS,CAAT,EAAY,KAAKzB,IAAL,GAAU,CAAtB,CAAX;AACD,KAHD,QAGQ,KAAK6B,cAAL,CAAoBjB,OAAOe,CAA3B,EAA6Bf,OAAOgB,CAApC,CAHR;AAIAhB,WAAOT,OAAP,GAAiB,KAAKA,OAAL,EAAjB;AACA,SAAKJ,OAAL,CAAa+B,IAAb,CAAkBlB,MAAlB;AACA,SAAKC,OAAL;AACA,WAAOD,MAAP;AACD;;AAEDmB,eAAanB,MAAb,EAAoB;AAClB,QAAG,KAAKK,SAAL,CAAeL,MAAf,CAAH,EAA0B;AACxB1B,QAAE8C,MAAF,CAAS,KAAKjC,OAAd,EAAuBiB,CAAD,IAAO;AAAE,eAAOA,EAAEZ,EAAF,KAASQ,OAAOR,EAAvB;AAA2B,OAA1D;AACA,aAAOQ,OAAOT,OAAd;AACA,WAAKE,SAAL,CAAe,QAAf,EAAwBO,MAAxB;AACD;AACF;;AAEDiB,iBAAeF,CAAf,EAAiBC,CAAjB,EAAmB;AACjB,WAAO1C,EAAEgC,IAAF,CAAO,KAAKnB,OAAZ,EAAoB,UAASiB,CAAT,EAAY;AAAE,aAAOA,EAAEW,CAAF,KAAQA,CAAR,IAAaX,EAAEY,CAAF,KAAQA,CAA5B;AAA+B,KAAjE,CAAP;AACD;;AAEDK,WAASrB,MAAT,EAAgB;AACd;AACAA,WAAOY,SAAP,IAAoB,CAApB;AACA,QAAGZ,OAAOY,SAAP,GAAmBlC,UAAUC,KAAhC,EAAuC;AACrCqB,aAAOY,SAAP,GAAmBlC,UAAUI,IAA7B;AACD;AACDkB,WAAOc,YAAP,GAAsB/B,SAASiB,OAAOY,SAAhB,CAAtB;AACA,SAAKb,MAAL,CAAYC,MAAZ;AACA;AACA,WAAO,IAAP;AACD;;AAEDsB,YAAUtB,MAAV,EAAiB;AACf;AACAA,WAAOY,SAAP,IAAoB,CAApB;AACA,QAAGZ,OAAOY,SAAP,GAAmBlC,UAAUI,IAAhC,EAAsC;AACpCkB,aAAOY,SAAP,GAAmBlC,UAAUC,KAA7B;AACD;AACDqB,WAAOc,YAAP,GAAsB/B,SAASiB,OAAOY,SAAhB,CAAtB;AACA,SAAKb,MAAL,CAAYC,MAAZ;AACA;AACA,WAAO,IAAP;AACD;;AAEDuB,cAAYvB,MAAZ,EAAmB;AACjB,QAAIe,IAAIf,OAAOe,CAAf;AACA,QAAIC,IAAIhB,OAAOgB,CAAf;AACA;AACA,YAAOhB,OAAOY,SAAd;AACE,WAAKlC,UAAUC,KAAf;AACEqC,aAAK,CAAL;AACA;AACF,WAAKtC,UAAUE,IAAf;AACEmC,aAAK,CAAL;AACA;AACF,WAAKrC,UAAUG,KAAf;AACEmC,aAAK,CAAL;AACA;AACF,WAAKtC,UAAUI,IAAf;AACEiC,aAAK,CAAL;AACA;AAZJ;AAcA,QAAGA,IAAE,CAAF,IAAOA,KAAK,KAAK3B,IAAjB,IAAyB4B,IAAI,CAA7B,IAAkCA,KAAK,KAAK5B,IAA5C,IAAoD,KAAK6B,cAAL,CAAoBF,CAApB,EAAsBC,CAAtB,CAAvD,EAAgF;AAC9E;AACA,aAAO,KAAP;AACD;AACDhB,WAAOe,CAAP,GAAWA,CAAX;AACAf,WAAOgB,CAAP,GAAWA,CAAX;AACA;AACA,SAAKjB,MAAL,CAAYC,MAAZ;AACA,WAAO,IAAP;AACD;;AAEDwB,MAAIxB,MAAJ,EAAW;AACT,QAAIe,IAAIf,OAAOe,CAAf;AACA,QAAIC,IAAIhB,OAAOgB,CAAf;AACA,YAAOhB,OAAOY,SAAd;AACE,WAAKlC,UAAUC,KAAf;AACEqC,aAAK,CAAL;AACA;AACF,WAAKtC,UAAUE,IAAf;AACEmC,aAAK,CAAL;AACA;AACF,WAAKrC,UAAUG,KAAf;AACEmC,aAAK,CAAL;AACA;AACF,WAAKtC,UAAUI,IAAf;AACEiC,aAAK,CAAL;AACA;AAZJ;AAcA;AACA,QAAIU,SAAS,KAAKR,cAAL,CAAoBF,CAApB,EAAsBC,CAAtB,CAAb;AACA,QAAGS,MAAH,EAAU;AACRA,aAAOf,MAAP,IAAiB,CAAjB;AACAV,aAAOW,KAAP,IAAgB,CAAhB;AACA;AACA,WAAKZ,MAAL,CAAY0B,MAAZ;AACA,WAAK1B,MAAL,CAAYC,MAAZ;AACA,WAAKP,SAAL,CAAe,QAAf,EAAwBjB,KAAKkD,MAAL,CAAY,0BAAZ,EAAwCD,OAAOE,IAA/C,EAAqD3B,OAAO2B,IAA5D,CAAxB;AACA;;;;;;AAMA,aAAO,IAAP;AACD;AACD,WAAO,KAAP;AACD;;AAED;AACA;AACA;;;;;AAKA;AACAC,iBAAe5B,MAAf,EAAsB;AACpB,QAAI6B,SAAS,CAAC,CAAd;AACA,YAAO7B,OAAOY,SAAd;AACE,WAAKlC,UAAUC,KAAf;AACEkD,iBAAS,KAAKzC,IAAL,GAAY,CAAZ,GAAgBY,OAAOgB,CAAhC;AACA;AACF,WAAKtC,UAAUE,IAAf;AACEiD,iBAAS,KAAKzC,IAAL,GAAY,CAAZ,GAAgBY,OAAOe,CAAhC;AACA;AACF,WAAKrC,UAAUG,KAAf;AACEgD,iBAAS7B,OAAOgB,CAAhB;AACA;AACF,WAAKtC,UAAUI,IAAf;AACE+C,iBAAS7B,OAAOe,CAAhB;AACA;AAZJ;AAcAe,YAAQC,GAAR,CAAY,oCAAZ,EAAkD/B,OAAOe,CAAzD,EAA4Df,OAAOgB,CAAnE,EAAsEa,MAAtE;AACA,WAAOA,MAAP;AACD;;AAEDG,QAAK;AACH,SAAKC,IAAL,GAAY,IAAZ;AACA,SAAKC,IAAL,GAAY,KAAZ;AACA,SAAKC,IAAL;AACA,QAAIC,KAAJ;AACAA,YAAQC,YAAY,MAAM;AACxB,UAAG,CAAC,KAAKJ,IAAT,EAAe;AACbK,sBAAcF,KAAd;AACD,OAFD,MAEO,IAAG,KAAKF,IAAL,KAAc,IAAjB,EAAuB;AAC5B,aAAKA,IAAL,GAAY,KAAZ;AACA,aAAKC,IAAL;AACD;AACF,KAPO,EAOL,GAPK,CAAR;AAQD;;AAEDA,SAAM;AACJ,QAAIjC,KAAK,IAAT;AACA,QAAIqC,WAAW,EAAf;;AAEA,QAAIC,kBAAkBtC,GAAGN,MAAH,CAAU6C,IAAV,CAAe,GAAf,EAAoBC,OAApB,CAA4BC,KAA5B,CAAkCzC,GAAGX,OAAH,EAAlC,CAAtB;AACA,QAAIqD,WAAW,EAAf;AACA,QAAIC,SAAS,EAAb;AACA,SAAK,IAAIC,QAAT,IAAqBN,gBAAgBO,OAArC,EAA8C;AAC5C,UAAIC,SAAS9C,GAAGN,MAAH,CAAUmD,OAAV,CAAkBE,SAAlB,CAA4BH,QAA5B,CAAb;AACA,UAAGE,OAAOE,cAAP,CAAsB,QAAtB,CAAH,EAAmC;AACjC;AACAL,eAAOG,OAAOxD,EAAd,IAAoB2D,SAApB;AACA,YAAIC,UAAU,IAAIC,OAAJ,CAAY,CAACC,OAAD,EAASC,MAAT,KAAoB;AAC5CP,iBAAOlD,IAAP,CAAY,iBAAZ,EAA8BI,GAAGX,OAAH,EAA9B,EAA4CiE,OAAD,IAAa;AACtDjB,qBAASrB,IAAT,CAAc,EAAClB,QAAQgD,OAAOhD,MAAhB,EAAwBwD,SAASA,OAAjC,EAA0CR,QAAQA,MAAlD,EAAd;AACAH,mBAAOG,OAAOxD,EAAd,EAAkBqD,MAAlB,GAA2B,IAA3B;AACAS,oBAAQ,CAAR;AACD,WAJD;AAKAG,qBAAW,MAAM;AACfZ,mBAAOG,OAAOxD,EAAd,EAAkBqD,MAAlB,GAA2B,KAA3B;AACAU,mBAAOP,OAAOhD,MAAd;AACD,WAHD,EAGE,GAHF;AAID,SAVa,CAAd;AAWA4C,iBAAS1B,IAAT,CAAckC,OAAd;AACAP,eAAOG,OAAOxD,EAAd,IAAoB,EAACqD,QAAQM,SAAT,EAAoBC,SAASA,OAA7B,EAApB;AACD;AACF;AACDC,YAAQK,GAAR,CAAYd,QAAZ,EAAsBe,IAAtB,CAA2B,MAAM;AAC/B,UAAIC,YAAY,CAAhB;AACAtF,QAAE6B,OAAF,CAAUoC,QAAV,EAAmB,UAASsB,GAAT,EAAa;AAC9B,YAAIhC,SAAS,KAAb;AACA+B,qBAAa,CAAb;AACA,gBAAOC,IAAIL,OAAX;AACE,eAAK,WAAL;AACE3B,qBAAS3B,GAAGmB,QAAH,CAAYwC,IAAI7D,MAAhB,CAAT;AACA;AACF,eAAK,YAAL;AACE6B,qBAAS3B,GAAGoB,SAAH,CAAauC,IAAI7D,MAAjB,CAAT;AACA;AACF,eAAK,cAAL;AACE6B,qBAAS3B,GAAGqB,WAAH,CAAesC,IAAI7D,MAAnB,CAAT;AACA;AACF,eAAK,KAAL;AACE6B,qBAAS3B,GAAGsB,GAAH,CAAOqC,IAAI7D,MAAX,CAAT;AACA;AACF,eAAK,kBAAL;AACE6B,qBAAS3B,GAAG0B,cAAH,CAAkBiC,IAAI7D,MAAtB,CAAT;AACA;AACF;AACE8B,oBAAQC,GAAR,CAAY,uCAAZ,EAAqD8B,IAAIL,OAAzD,EAAkEK,IAAI7D,MAAJ,CAAW2B,IAA7E;AAjBJ;AAmBA;AACA,YAAGiC,cAAchB,SAASpC,MAA1B,EAAiC;AAC/BN,aAAGgC,IAAH,GAAU,IAAV;AACD;AACD2B,YAAIb,MAAJ,CAAWlD,IAAX,CAAgB,QAAhB,EAAyB,EAAC0D,SAASK,IAAIL,OAAd,EAAuB3B,QAAQA,MAA/B,EAAzB;AACD,OA3BD;AA4BD,KA9BD,EA+BCiC,KA/BD,CA+BQ9D,MAAD,IAAY;AACjB8B,cAAQC,GAAR,CAAY,qCAAZ,EAAmD/B,OAAO2B,IAA1D;AACAzB,SAAGgC,IAAH,GAAU,IAAV;AACD,KAlCD;AAmCD;;AAED6B,SAAM;AACJ,SAAK9B,IAAL,GAAY,KAAZ;AACD;AAtQS;;AAyQZ+B,OAAOC,OAAP,GAAiBjF,KAAjB",
+      "file": "board.js",
+      "sourceRoot": "/app",
+      "sourcesContent": [
+        "\"use strict\"\n\nconst _ = require('lodash')\nconst util = require('util')\nconst sleep = require('./sleep')\n\nconst DIRECTION = {\n  north: 0,\n  east: 1,\n  south: 2,\n  west: 3\n}\n\nconst CARDINAL = [\n  'North',\n  'East',\n  'South',\n  'West'\n]\n\nclass Board {\n  constructor(options) {\n    this.players = []\n    this.size = 25\n//    this.winner = 3\n    this.open = false\n    _.assign(this, options)\n    return this\n  }\n  \n  channel(){\n    return 'board-' + this.id\n  }\n\n  broadcast(event,data){\n    this.server.to(this.channel()).emit(event,data)\n  }\n\n  update(player){\n    this.broadcast('update',player)\n  }\n  \n  refresh() {\n    var me = this\n    //console.log(me.players)\n    _.forEach(me.players, function(p) { me.update(p) })\n  }\n\n  hasPlayer(player){\n    return _.find(this.players, function(p) { return p.id === player.id })\n  }\n  \n  numPlayers() {\n    return this.players.length\n  }\n  \n  addPlayer(player){\n    player.tagged = 0\n    player.score = 0\n    player.direction = _.random(DIRECTION.north,DIRECTION.west)\n    player.directionStr = CARDINAL[player.direction]\n    do {\n      player.x = _.random(0, this.size-1)\n      player.y = _.random(0, this.size-1)\n    } while(this.isCellOccupied(player.x,player.y))\n    player.channel = this.channel()\n    this.players.push(player)\n    this.refresh()\n    return player\n  }\n  \n  removePlayer(player){\n    if(this.hasPlayer(player)){\n      _.remove(this.players,(p) => { return p.id === player.id })\n      delete player.channel\n      this.broadcast('remove',player)\n    }\n  }\n                   \n  isCellOccupied(x,y){\n    return _.find(this.players,function(p) { return p.x === x && p.y === y })\n  }\n  \n  turnLeft(player){\n    //console.log('start: x %d y %d d %s', player.x, player.y, player.directionStr)\n    player.direction -= 1\n    if(player.direction < DIRECTION.north) {\n      player.direction = DIRECTION.west\n    }\n    player.directionStr = CARDINAL[player.direction]\n    this.update(player)\n    //console.log('  end: x %d y %d d %s', player.x, player.y, player.directionStr)\n    return true\n  }\n  \n  turnRight(player){\n    //console.log('start: x %d y %d d %s', player.x, player.y, player.directionStr)\n    player.direction += 1\n    if(player.direction > DIRECTION.west) {\n      player.direction = DIRECTION.north\n    }\n    player.directionStr = CARDINAL[player.direction]\n    this.update(player)\n    //console.log('  end: x %d y %d d %s', player.x, player.y, player.directionStr)\n    return true\n  }\n  \n  moveForward(player){\n    var x = player.x\n    var y = player.y\n    //console.log('start: x %d y %d d %s', player.x, player.y, player.directionStr)\n    switch(player.direction){\n      case DIRECTION.north:\n        y += 1\n        break\n      case DIRECTION.east:\n        x += 1\n        break\n      case DIRECTION.south:\n        y -= 1\n        break\n      case DIRECTION.west:\n        x -= 1\n        break;\n    }\n    if(x<0 || x >= this.size || y < 0 || y >= this.size || this.isCellOccupied(x,y)){\n      //console.log('rejected')\n      return false\n    }\n    player.x = x\n    player.y = y\n    //console.log('  end: x %d y %d d %s', player.x, player.y, player.directionStr)    \n    this.update(player)\n    return true\n  }\n  \n  tag(player){\n    var x = player.x\n    var y = player.y\n    switch(player.direction){\n      case DIRECTION.north:\n        y += 1\n        break\n      case DIRECTION.east:\n        x += 1\n        break\n      case DIRECTION.south:\n        y -= 1\n        break\n      case DIRECTION.west:\n        x -= 1\n        break;\n    }\n    //console.log('  tag: x %d y %d d %s', x, y, player.directionStr)\n    var target = this.isCellOccupied(x,y)\n    if(target){\n      target.tagged += 1\n      player.score += 1\n      //console.log(util.format('[%s] was tagged by [%s]!', target.name, player.name))\n      this.update(target)\n      this.update(player)\n      this.broadcast('status',util.format('[%s] was tagged by [%s]!', target.name, player.name))\n      /*\n      if(player.score >= this.winner){\n        this.broadcast('winner',player)\n        console.log(util.format('[%s] has won!', player.name))\n      }\n      */\n      return true\n    }\n    return false\n  }\n  \n  // returns 0 if there are no bots in a straight line in front of where bot is facing\n  // otherwise, returns number of 'moveForward' commands to bring bot to next bot\n  /*\n  distanceToBot(player){\n  }\n  */\n  \n  // returns number of 'moveForward' commands to next wall\n  distanceToWall(player){\n    var result = -1\n    switch(player.direction){\n      case DIRECTION.north:\n        result = this.size - 1 - player.y;\n        break;\n      case DIRECTION.east:\n        result = this.size - 1 - player.x;\n        break;\n      case DIRECTION.south:\n        result = player.y;\n        break;\n      case DIRECTION.west:\n        result = player.x;\n        break;\n    }\n    console.log('Distance to wall for (%d,%d) is %d', player.x, player.y, result)\n    return result\n  }\n  \n  run(){\n    this.loop = true\n    this.done = false\n    this._run()\n    var timer\n    timer = setInterval(() => {\n      if(!this.loop) {\n        clearInterval(timer)\n      } else if(this.done === true) { \n        this.done = false\n        this._run()\n      }\n    }, 100)\n  }\n    \n  _run(){\n    var me = this\n    var commands = []\n      \n    var sockets_in_room = me.server.nsps['/'].adapter.rooms[me.channel()]\n    var promises = []\n    var status = {}\n    for (var socketId in sockets_in_room.sockets) {\n      var client = me.server.sockets.connected[socketId]\n      if(client.hasOwnProperty('player')){\n        //console.log('request command from [%s] at %s',client.player.name,socketId)\n        status[client.id] = undefined\n        var promise = new Promise((resolve,reject) => {\n          client.emit('request command',me.channel(),(command) => {\n            commands.push({player: client.player, command: command, client: client})\n            status[client.id].status = true\n            resolve(1)\n          })\n          setTimeout(() => {\n            status[client.id].status = false\n            reject(client.player) \n          },500)\n        })\n        promises.push(promise)\n        status[client.id] = {status: undefined, promise: promise}\n      }        \n    }\n    Promise.all(promises).then(() => {\n      var responses = 0\n      _.forEach(commands,function(cmd){\n        var result = false\n        responses += 1\n        switch(cmd.command){\n          case 'turn left':\n            result = me.turnLeft(cmd.player)\n            break;\n          case 'turn right':\n            result = me.turnRight(cmd.player)\n            break;\n          case 'move forward':\n            result = me.moveForward(cmd.player)\n            break;\n          case 'tag':\n            result = me.tag(cmd.player)\n            break;\n          case 'distance to wall':\n            result = me.distanceToWall(cmd.player)\n            break;\n          default:\n            console.log('Unrecognized command \\'%s\\' from [%s]', cmd.command, cmd.player.name)\n        }\n        //console.log('responses %d of %d', responses, promises.length)\n        if(responses === promises.length){\n          me.done = true\n        }\n        cmd.client.emit('result',{command: cmd.command, result: result})        \n      })\n    })\n    .catch((player) => {\n      console.log('Timeout waiting for [%s] to respond', player.name)\n      me.done = true\n    })\n  }\n\n  stop(){\n    this.loop = false\n  }\n}\n\nmodule.exports = Board"
+      ]
+    },
+    "mtime": 1493085761577
+  },
+  "{\"filename\":\"/app/sleep.js\",\"env\":{},\"retainLines\":false,\"highlightCode\":true,\"suppressDeprecationMessages\":false,\"presets\":[],\"plugins\":[[[],null]],\"ignore\":[],\"code\":true,\"metadata\":true,\"ast\":true,\"comments\":true,\"compact\":\"auto\",\"minified\":false,\"sourceRoot\":\"/app\",\"babelrc\":true,\"sourceType\":\"module\",\"moduleIds\":false,\"passPerPreset\":false,\"parserOpts\":false,\"generatorOpts\":false}:6.24.1": {
+    "metadata": {
+      "usedHelpers": [
+        "asyncToGenerator"
+      ],
+      "marked": [],
+      "modules": {
+        "imports": [],
+        "exports": {
+          "exported": [],
+          "specifiers": []
+        }
+      }
+    },
+    "options": {
+      "filename": "/app/sleep.js",
+      "filenameRelative": "/app/sleep.js",
+      "env": {},
+      "retainLines": false,
+      "highlightCode": true,
+      "suppressDeprecationMessages": false,
+      "presets": [],
+      "plugins": [
+        [
+          [],
+          null
+        ]
+      ],
+      "ignore": [],
+      "code": true,
+      "metadata": true,
+      "ast": false,
+      "comments": true,
+      "compact": "auto",
+      "minified": false,
+      "sourceMaps": "both",
+      "sourceMapTarget": "sleep.js",
+      "sourceFileName": "sleep.js",
+      "sourceRoot": "/app",
+      "babelrc": false,
+      "sourceType": "module",
+      "moduleRoot": "/app",
+      "moduleIds": false,
+      "passPerPreset": false,
+      "parserOpts": false,
+      "generatorOpts": false,
+      "basename": "sleep"
+    },
+    "ignored": false,
+    "code": "\"use strict\";\n\nfunction _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step(\"next\", value); }, function (err) { step(\"throw\", err); }); } } return step(\"next\"); }); }; }\n\nmodule.exports.sleep = (() => {\n  var _ref = _asyncToGenerator(function* (ms) {\n    var sleep = new Promise(function (resolve) {\n      return setTimeout(resolve, ms);\n    });\n    yield sleep;\n  });\n\n  return function (_x) {\n    return _ref.apply(this, arguments);\n  };\n})();\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbInNsZWVwLmpzIl0sIm5hbWVzIjpbIm1vZHVsZSIsImV4cG9ydHMiLCJzbGVlcCIsIm1zIiwiUHJvbWlzZSIsInNldFRpbWVvdXQiLCJyZXNvbHZlIl0sIm1hcHBpbmdzIjoiQUFBQTs7OztBQUVBQSxPQUFPQyxPQUFQLENBQWVDLEtBQWY7QUFBQSwrQkFBdUIsV0FBZUMsRUFBZixFQUFtQjtBQUN4QyxRQUFJRCxRQUFRLElBQUlFLE9BQUosQ0FBWTtBQUFBLGFBQVdDLFdBQVdDLE9BQVgsRUFBbUJILEVBQW5CLENBQVg7QUFBQSxLQUFaLENBQVo7QUFDQSxVQUFNRCxLQUFOO0FBQ0QsR0FIRDs7QUFBQTtBQUFBO0FBQUE7QUFBQSIsImZpbGUiOiJzbGVlcC5qcyIsInNvdXJjZVJvb3QiOiIvYXBwIiwic291cmNlc0NvbnRlbnQiOlsiXCJ1c2Ugc3RyaWN0XCJcblxubW9kdWxlLmV4cG9ydHMuc2xlZXAgPSBhc3luYyBmdW5jdGlvbihtcykge1xuICB2YXIgc2xlZXAgPSBuZXcgUHJvbWlzZShyZXNvbHZlID0+IHNldFRpbWVvdXQocmVzb2x2ZSxtcykpXG4gIGF3YWl0IHNsZWVwXG59Il19",
+    "ast": null,
+    "map": {
+      "version": 3,
+      "sources": [
+        "sleep.js"
+      ],
+      "names": [
+        "module",
+        "exports",
+        "sleep",
+        "ms",
+        "Promise",
+        "setTimeout",
+        "resolve"
+      ],
+      "mappings": "AAAA;;;;AAEAA,OAAOC,OAAP,CAAeC,KAAf;AAAA,+BAAuB,WAAeC,EAAf,EAAmB;AACxC,QAAID,QAAQ,IAAIE,OAAJ,CAAY;AAAA,aAAWC,WAAWC,OAAX,EAAmBH,EAAnB,CAAX;AAAA,KAAZ,CAAZ;AACA,UAAMD,KAAN;AACD,GAHD;;AAAA;AAAA;AAAA;AAAA",
+      "file": "sleep.js",
+      "sourceRoot": "/app",
+      "sourcesContent": [
+        "\"use strict\"\n\nmodule.exports.sleep = async function(ms) {\n  var sleep = new Promise(resolve => setTimeout(resolve,ms))\n  await sleep\n}"
+      ]
+    },
+    "mtime": 1493081701934
+  }
+}

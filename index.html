@@ -6,7 +6,7 @@
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
       #blocklyDiv { height: 480px; flex: 3; }
-      #board { height: 480px; flex: 2; border: 1px solid #ddd; padding: 10px; }
+      #board { height: 480px; flex: 2; border: 1px solid #ddd; padding: 10px; font: 8px Helvetica, Arial; }
       #scores { padding-top: 16px; padding-right: 16px; font: 24px Helvetica, Arial; flex: 1; }
       #log { clear: both; font: 13px Menlo, Consolas, Monaco, "Lucida Console", monospace; flex: 1; border-top: 1px solid black; max-height: 350px; min-height: 150px; position: relative; overflow: auto; }
       .flex-container {
@@ -83,7 +83,7 @@
           this.gridSize = size;
           this.cellWidth = (this.canvas.width - 20) / this.gridSize;
           this.cellHeight = (this.canvas.height - 20) / this.gridSize;
-          this.context.font = '12px Arial';
+          this.context.font = '8px Helvetica, Arial';
         }
         
         BoardUI.prototype.updatePlayer = function (player){
@@ -114,9 +114,12 @@
         
         return BoardUI;
       })();
+      
+      
     </script>
     
     <script>
+      localStorage.debug = ''
       
       // hide all of the action buttons
       $(document).ready(function(){
@@ -140,22 +143,27 @@
         })
       };
       
+      var log = function(message) {
+        $('#log').append('<p>' + message +'</p>');
+      }
       
       // init the blockly ui widgets
-      var workspace = Blockly.inject('blocklyDiv',{toolbox: document.getElementById('toolbox')});
+      //var workspace = Blockly.inject('blocklyDiv',{toolbox: document.getElementById('toolbox')});
 
       // connect the websocket
       var socket = io();
       
+      //
+      // Socket Handlers
+      //
+      
       // track 'status' messages
       socket.on('status',(message) => {
-        $('#log').append('<p>' + message + '</p>');  // log it
+        log(message);
       })
       
       // track 'update' messages
       socket.on('update',(bot) => {
-        //$('#log').append('<p>' + bot.name + ' is at (' + bot.x +','+ bot.y +'), facing '+bot.directionStr+'</p>')  // log it
-        
         // update the variables we're using to track scores
         if(bot.id === player.id) {
           player = bot;
@@ -176,76 +184,10 @@
         board.removePlayer(bot);
       });
       
-      
-      /*
-      **
-      ** Demo Bot Code
-      **
-      */
-      
-      var distanceToWall = -1;
-      var obstruction = false;
-      var botInFront = false;
-      
-      socket.on('request command',(channel,callback) => {
-        var command;
-        
-        if(botInFront) {
-          command = 'tag';
-        } else if(obstruction) {
-          botInFront = false;
-          command = 'bot in front'
-        } else if(distanceToWall < 0){
-          botInFront = false;
-          command = 'distance to wall'
-        } else if(distanceToWall > 0){
-          botInFront = false;
-          command = 'move forward'
-        } else {
-          botInFront = false;
-          switch(_.random(0,1)){
-            case 0:
-              command = 'turn left';
-              break;
-            case 1:
-              command = 'turn right';
-              break;
-          }
-          distanceToWall = -1;
-        }
-        callback(command);
-      });
-      
-      socket.on('result',(obj) => {
-        //$('#log').append('<p>' + obj.command + ': ' + obj.result + '</p>')  // log it                
-        if(obj.command === 'distance to wall'){
-          distanceToWall = obj.result;
-        } else if(obj.command === 'move forward'){
-          if(obj.result){
-            obstruction = false;
-            botInFront = false;
-            distanceToWall -= 1;
-          } else {
-            obstruction = true;
-            distanceToWall = 0;
-          }
-        } else if(obj.command === 'bot in front'){
-          botInFront = obj.result;
-        } else if(obj.command === 'tag'){
-          obstruction = false;
-          botInFront = false;
-          distanceToWall = 0;
-        }
-      })
-      
-      /*
-      **
-      ** END Demo Bot Code
-      **
-      */
-      
-      localStorage.debug = ''
-      
+      //
+      // UI Handlers
+      //
+
       // handle when user click the 'Join' button
       $('#auth').click(() => {
         name = $('#nickname').val().trim();
@@ -267,9 +209,11 @@
         $('#test').hide();
         $('#stop').show();
         $('#play').hide();
-        socket.emit('test',(size) => {
+        socket.emit('test',(size,channel) => {
           board.clear();
           board.setBoardSize(size);
+          board.channel = channel;
+          run();
         });
       })
       
@@ -279,6 +223,7 @@
         $('#stop').hide();
         $('#play').show();
         socket.emit('stop');
+        stop();
       })
       
       // handle when user clicks the 'Play' button
@@ -286,12 +231,81 @@
         $('#test').hide();
         $('#stop').show();
         $('#play').hide();
-        socket.emit('play',(size) => {
+        socket.emit('play',(size,channel) => {
           board.clear();
           board.setBoardSize(size);
+          board.channel = channel;
+          run();
         });
       })
-
+     
+      /*
+      **
+      ** Demo Bot Code
+      **
+      */
+      
+      var running = false;
+      
+      function running(){
+        return running;
+      }
+      
+      function run(){
+        var distanceToWall = -1;
+        var botInFront = false;
+        var waiting = false;
+        running = true;
+        
+        var timer = setInterval(() => {          
+          if(running === false){
+            clearInterval(timer);
+            return;
+          } else if(waiting === true) {
+            return;
+          }
+                    
+          waiting = true;
+          if(botInFront) {
+            socket.emit('tag',(success) => {botInFront = false; distanceToWall = 0; waiting = false;});
+          } else if(distanceToWall < 0) {
+            socket.emit('distance to wall',(distance) => {distanceToWall = distance; waiting = false;});
+          } else if(distanceToWall > 0) {
+            socket.emit('move forward',(success) => {
+              if(success){
+                distanceToWall -= 1;
+              }else if(distanceToWall > 0){
+                botInFront = true;
+              }
+              waiting = false;
+            });
+          } else {  // distanceToWall === 0
+            switch(_.random(0,1)){
+              case 0:
+                socket.emit('turn left',()=>{distanceToWall = -1; waiting = false;});
+                break;
+              case 1:
+              default:
+                socket.emit('turn right',()=>{distanceToWall = -1; waiting = false;});
+                break;
+            }
+          }
+        },250);
+      }
+      
+      function stop(){
+        running = false;
+      }
+      
+      /*
+      **
+      ** END Demo Bot Code
+      **
+      */
+      
+      
+      
+      
     </script>
 
   </body>
