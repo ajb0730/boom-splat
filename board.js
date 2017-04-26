@@ -24,6 +24,7 @@ class Board {
     this.size = 25
 //    this.winner = 3
     this.open = false
+    this.loop = false
     _.assign(this, options)
     return this
   }
@@ -66,6 +67,7 @@ class Board {
     player.channel = this.channel()
     this.players.push(player)
     this.refresh()
+    this.broadcast('status', player.fmtName() + ' has joined the arena.')    
     return player
   }
   
@@ -74,6 +76,7 @@ class Board {
       _.remove(this.players,(p) => { return p.id === player.id })
       delete player.channel
       this.broadcast('remove',player)
+      this.broadcast('status', player.fmtName() + ' has left the arena.')
     }
   }
                    
@@ -135,6 +138,20 @@ class Board {
   }
   
   tag(player){
+    var target = this.botInFront(player)
+    if(target){
+      target.tagged += 1
+      player.score += 1
+      this.update(target)
+      this.update(player)
+      this.broadcast('status',util.format('[%s] was tagged by [%s]!', target.fmtName(), player.fmtName()))
+      return true
+    }
+    return false
+  }
+  
+  // returns true if there is another bot in front of the player
+  botInFront(player){
     var x = player.x
     var y = player.y
     switch(player.direction){
@@ -152,31 +169,8 @@ class Board {
         break;
     }
     //console.log('  tag: x %d y %d d %s', x, y, player.directionStr)
-    var target = this.isCellOccupied(x,y)
-    if(target){
-      target.tagged += 1
-      player.score += 1
-      //console.log(util.format('[%s] was tagged by [%s]!', target.name, player.name))
-      this.update(target)
-      this.update(player)
-      this.broadcast('status',util.format('[%s] was tagged by [%s]!', target.name, player.name))
-      /*
-      if(player.score >= this.winner){
-        this.broadcast('winner',player)
-        console.log(util.format('[%s] has won!', player.name))
-      }
-      */
-      return true
-    }
-    return false
+    return this.isCellOccupied(x,y)
   }
-  
-  // returns 0 if there are no bots in a straight line in front of where bot is facing
-  // otherwise, returns number of 'moveForward' commands to bring bot to next bot
-  /*
-  distanceToBot(player){
-  }
-  */
   
   // returns number of 'moveForward' commands to next wall
   distanceToWall(player){
@@ -195,8 +189,12 @@ class Board {
         result = player.x;
         break;
     }
-    console.log('Distance to wall for (%d,%d) is %d', player.x, player.y, result)
+    //console.log('Distance to wall for (%d,%d,%s) is %d', player.x, player.y, player.directionStr, result)
     return result
+  }
+  
+  running(){
+    return this.loop;
   }
   
   run(){
@@ -219,6 +217,10 @@ class Board {
     var commands = []
       
     var sockets_in_room = me.server.nsps['/'].adapter.rooms[me.channel()]
+    if(!sockets_in_room){
+      this.loop = false
+      return
+    }
     var promises = []
     var status = {}
     for (var socketId in sockets_in_room.sockets) {
@@ -227,14 +229,18 @@ class Board {
         //console.log('request command from [%s] at %s',client.player.name,socketId)
         status[client.id] = undefined
         var promise = new Promise((resolve,reject) => {
-          client.emit('request command',me.channel(),(command) => {
-            commands.push({player: client.player, command: command, client: client})
-            status[client.id].status = true
+          var myClient = client
+          //console.log('[%s] request command', client.player.name)
+          myClient.emit('request command',me.channel(),(command) => {
+            var innerClient = myClient;
+            //console.log('[%s] %s', innerClient.player.name, command)
+            commands.push({player: innerClient.player, command: command, client: innerClient})
+            status[innerClient.id].status = true
             resolve(1)
           })
           setTimeout(() => {
-            status[client.id].status = false
-            reject(client.player) 
+            status[myClient.id].status = false
+            reject(myClient.player) 
           },500)
         })
         promises.push(promise)
@@ -261,6 +267,9 @@ class Board {
             break;
           case 'distance to wall':
             result = me.distanceToWall(cmd.player)
+            break;
+          case 'bot in front':
+            result = me.botInFront(cmd.player) ? true : false
             break;
           default:
             console.log('Unrecognized command \'%s\' from [%s]', cmd.command, cmd.player.name)
