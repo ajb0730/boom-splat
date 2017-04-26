@@ -77,6 +77,44 @@ main.on('connection', function (client){
     players.push(player)
     
     client.player = player
+    
+    client.handlers = {
+      turnLeft: function(callback) {
+        var result = client.board.turnLeft(client.player)
+        //console.log('[%s] turnLeft %s', client.player, result)
+        callback(result)
+      },
+      turnRight: function(callback) {
+        var result = client.board.turnRight(client.player)
+        //console.log('[%s] turnRight %s', client.player, result)        
+        callback(result)
+      },
+      moveForward: function(callback) {
+        var result = client.board.moveForward(client.player)
+        //console.log('[%s] moveForward %s', client.player, result)        
+        callback(result)
+      },
+      tag: function(callback) {
+        var result = client.board.tag(client.player)
+        //console.log('[%s] tag %s', client.player, result)        
+        callback(result)
+      },
+      distanceToWall: function(callback) {
+        var result = client.board.distanceToWall(client.player)
+        //console.log('[%s] distanceToWall %s', client.player, result)        
+        callback(result)
+      },
+      distanceToBot: function(callback) {
+        var result = client.board.distanceToBot(client.player)
+        //console.log('[%s] distanceToBot %s', client.player, result)        
+        callback(result)
+      },
+      botInFront: function(callback) {
+        var result = client.board.botInFront(client.player)
+        //console.log('[%s] botInFront %s', client.player, result)        
+        callback(result)
+      }
+    }
 
     console.log('[%s] has joined the game', player.name)
     server.emit('status', player.fmtName() + ' has joined the game.')
@@ -87,34 +125,22 @@ main.on('connection', function (client){
   // player is in editing and wants to test their robot; put them in a 'private' board and start it running
   client.on('test', (callback) => {
     var board = new Board({id: ++boardId, server: server})
-    client.join(board.channel())
-    board.addPlayer(player)
-    client.board = board
-    board.run()
-    callback(board.size)
+    board.register(client)
+    callback(board.size, board.channel())
   })
   
-  // player is in test and wants to go back to editing
+  // player is in test or play, and wants to go back to editing
   client.on('stop', () => {
     if(client.hasOwnProperty('board')){
       var board = client.board
-      board.removePlayer(player)
-      client.leave(board.channel())
-      if(board.numPlayers() === 0){
-        board.stop()
-      }
-      delete client.board      
+      board.unregister(client)
     }
   })
   
   // player is in editing and wants to go to the arena (compete against other robots)
   client.on('play', (callback) => {
-    client.join(arena.channel())
-    arena.addPlayer(player)
-    client.board = arena
-    if(!arena.running())
-      arena.run()
-    callback(arena.size)
+    arena.register(client)
+    callback(arena.size, arena.channel())
   })
     
   // player has left entirely
@@ -128,10 +154,7 @@ main.on('connection', function (client){
     }
     if(client.hasOwnProperty('board')){
       var board = client.board
-      board.removePlayer(player)
-      if(board.numPlayers() === 0){
-        _.remove(function(b){return b.id === board.id})
-      }
+      board.unregister(client)
     }
   })
 })

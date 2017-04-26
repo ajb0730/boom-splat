@@ -79,6 +79,33 @@ class Board {
       this.broadcast('status', player.fmtName() + ' has left the arena.')
     }
   }
+  
+  register(client){
+    var me = this
+    client.join(me.channel())
+    me.addPlayer(client.player)
+    client.board = me
+    client.on('turn left',client.handlers.turnLeft)
+    client.on('turn right',client.handlers.turnRight)
+    client.on('move forward',client.handlers.moveForward)
+    client.on('tag',client.handlers.tag)
+    client.on('distance to wall',client.handlers.distanceToWall)
+    client.on('distance to bot',client.handlers.distanceToBot)
+    client.on('bot in front',client.handlers.botInFront)
+  }
+  
+  unregister(client){
+    this.removePlayer(client.player)
+    client.leave(this.channel())
+    client.removeListener('turn left',client.handlers.turnLeft)
+    client.removeListener('turn right',client.handlers.turnRight)
+    client.removeListener('move forward',client.handlers.moveForward)
+    client.removeListener('tag',client.handlers.tag)
+    client.removeListener('distance to wall',client.handlers.distanceToWall)
+    client.removeListener('distance to bot',client.handlers.distanceToBot)
+    client.removeListener('bot in front',client.handlers.botInFront)
+    delete client.board
+  }
                    
   isCellOccupied(x,y){
     return _.find(this.players,function(p) { return p.x === x && p.y === y })
@@ -193,6 +220,33 @@ class Board {
     return result
   }
   
+  distanceToBot(player){
+    if(this.players.length <= 1){
+      return 0;
+    }
+    var target;
+    var distance = 0;
+    switch(player.direction){
+      case DIRECTION.north:
+        target = _.find(this.players,(p) => { return (p.x === player.x && p.y > player.y) });
+        distance = target.y - player.y;
+        break;
+      case DIRECTION.east:
+        target = _.find(this.players,(p) => { return (p.y === player.y && p.x > player.x) });
+        distance = target.x - player.x;
+        break;
+      case DIRECTION.south:
+        target = _.find(this.players,(p) => { return (p.x === player.x && player.y > p.y) });
+        distance = player.y - target.y;
+        break;
+      case DIRECTION.west:
+        target = _.find(this.players,(p) => { return (p.y === player.y && player.x > p.x) });
+        distance = player.x - target.x;
+        break;
+    }
+    return distance;
+  }
+  /*
   running(){
     return this.loop;
   }
@@ -290,6 +344,7 @@ class Board {
   stop(){
     this.loop = false
   }
+  */
 }
 
 module.exports = Board
