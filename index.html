@@ -1,16 +1,298 @@
 <!doctype html>
 <html>
   <head>
-    <title>Boom Splat!</title>
+    <title>Tag!</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
+      #blocklyDiv { height: 480px; flex: 3; }
+      #board { height: 480px; flex: 2; border: 1px solid #ddd; padding: 10px; }
+      #scores { padding-top: 16px; padding-right: 16px; font: 24px Helvetica, Arial; flex: 1; }
+      #log { clear: both; font: 13px Menlo, Consolas, Monaco, "Lucida Console", monospace; flex: 1; border-top: 1px solid black; max-height: 350px; min-height: 150px; position: relative; overflow: auto; }
+      .flex-container {
+        display: -webkit-flex;
+        display: flex;
+        width: 100%;
+        height: 480px;
+        justify-content: flex-start;
+        align-items: stretch;
+      }
+      .flex-item {
+        margin: auto;
+      }
     </style>
   </head>
   <body>
+    
+    <div class="flex-container">
+      <div id="blocklyDiv"></div>
+      <canvas id="board"></canvas>
+      <div id="scores">
+        <div id="own">
+          Nickname: <input type="text" id="nickname" />
+          <input type="button" id="auth" value="Join!" />
+        </div>
+        <div id="controls">
+          <input type="button" id="test" value="Test" />
+          <input type="button" id="play" value="Play" />
+          <input type="button" id="stop" value="Stop" />
+        </div>
+        <hr />
+        <div id="others">
+        </div>
+      </div>      
+    </div>
+    
+    <xml id="toolbox" style="display: none">
+      <block type="controls_if"></block>
+      <block type="controls_repeat_ext"></block>
+      <block type="logic_compare"></block>
+      <block type="math_number"></block>
+      <block type="math_arithmetic"></block>
+      <block type="text"></block>
+      <block type="text_print"></block>
+    </xml>
+    
+    
+    
+    <footer id="log"></footer>
+
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/blockly/blockly_compressed.js"></script>
+    <script src="/blockly/blocks_compressed.js"></script>
+    <script src="/blockly/msg/js/en.js"></script>
+    <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
+    
     <script>
-        var socket = io()
+      const ICONS = [
+        '▲',  // north
+        '▶',  // east,
+        '▼',  // south,
+        '◀'   // west
+      ]
+      BoardUI = (function(){
+        
+        function BoardUI(canvas){
+          this.canvas = canvas;
+          this.context = this.canvas.getContext('2d');
+          this.players = [];
+        }
+        
+        BoardUI.prototype.setBoardSize = function (size){
+          this.gridSize = size;
+          this.cellWidth = (this.canvas.width - 20) / this.gridSize;
+          this.cellHeight = (this.canvas.height - 20) / this.gridSize;
+          this.context.font = '12px Arial';
+        }
+        
+        BoardUI.prototype.updatePlayer = function (player){
+          this.removePlayer(player);
+          this.players.push({id: player.id, x: player.x, y: player.y, direction: player.direction, color: player.color});
+          this.draw();
+        }
+        
+        BoardUI.prototype.removePlayer = function (player){
+          _.remove(this.players,(p) => { return p.id === player.id });
+        }
+        
+        BoardUI.prototype.draw = function (){
+          var context = this.context;
+          var gridsize = this.gridSize;
+          
+          context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+          
+          _.forEach(this.players,(p) => {
+            context.fillStyle = p.color;
+            context.fillText(ICONS[p.direction], 10 + (p.x * this.cellWidth), 10 + ((gridsize - p.y) * this.cellHeight));
+          });
+        }
+        
+        BoardUI.prototype.clear = function (){
+          this.players = [];
+        }
+        
+        return BoardUI;
+      })();
     </script>
+    
+    <script>
+      
+      // hide all of the action buttons
+      $(document).ready(function(){
+        $('#test').hide();
+        $('#play').hide();
+        $('#stop').hide();
+      })
+      
+      // set up variables to track scores
+      var player;
+      var others = [];
+      var board = new BoardUI(document.getElementById('board'));
+      
+      // a function to refresh the score display
+      var refresh = function() {
+        $('#own').empty();
+        $('#own').append('<p><font color="' + player.color + '">' + player.name + '</font> score: ' + player.score + '/' + player.tagged + '</p>');
+        $('#others').empty();
+        _.forEach(others,function (b) {
+          $('#others').append('<p><font color="' + b.color + '">' + b.name + '</font> score: ' + b.score + '/' + b.tagged + '</p>');
+        })
+      };
+      
+      
+      // init the blockly ui widgets
+      var workspace = Blockly.inject('blocklyDiv',{toolbox: document.getElementById('toolbox')});
+
+      // connect the websocket
+      var socket = io();
+      
+      // track 'status' messages
+      socket.on('status',(message) => {
+        $('#log').append('<p>' + message + '</p>');  // log it
+      })
+      
+      // track 'update' messages
+      socket.on('update',(bot) => {
+        //$('#log').append('<p>' + bot.name + ' is at (' + bot.x +','+ bot.y +'), facing '+bot.directionStr+'</p>')  // log it
+        
+        // update the variables we're using to track scores
+        if(bot.id === player.id) {
+          player = bot;
+        } else {
+          _.remove(others,(b) => { return b.id === bot.id });
+          others.push(bot);
+        }
+        
+        refresh();
+        
+        board.updatePlayer(bot);
+      });
+      
+      // track 'remove' messages
+      socket.on('remove',(bot) => {
+        _.remove(others,(b) => { return b.id === bot.id });
+        refresh();
+        board.removePlayer(bot);
+      });
+      
+      
+      /*
+      **
+      ** Demo Bot Code
+      **
+      */
+      
+      var distanceToWall = -1;
+      var obstruction = false;
+      var botInFront = false;
+      
+      socket.on('request command',(channel,callback) => {
+        var command;
+        
+        if(botInFront) {
+          command = 'tag';
+        } else if(obstruction) {
+          botInFront = false;
+          command = 'bot in front'
+        } else if(distanceToWall < 0){
+          botInFront = false;
+          command = 'distance to wall'
+        } else if(distanceToWall > 0){
+          botInFront = false;
+          command = 'move forward'
+        } else {
+          botInFront = false;
+          switch(_.random(0,1)){
+            case 0:
+              command = 'turn left';
+              break;
+            case 1:
+              command = 'turn right';
+              break;
+          }
+          distanceToWall = -1;
+        }
+        callback(command);
+      });
+      
+      socket.on('result',(obj) => {
+        //$('#log').append('<p>' + obj.command + ': ' + obj.result + '</p>')  // log it                
+        if(obj.command === 'distance to wall'){
+          distanceToWall = obj.result;
+        } else if(obj.command === 'move forward'){
+          if(obj.result){
+            obstruction = false;
+            botInFront = false;
+            distanceToWall -= 1;
+          } else {
+            obstruction = true;
+            distanceToWall = 0;
+          }
+        } else if(obj.command === 'bot in front'){
+          botInFront = obj.result;
+        } else if(obj.command === 'tag'){
+          obstruction = false;
+          botInFront = false;
+          distanceToWall = 0;
+        }
+      })
+      
+      /*
+      **
+      ** END Demo Bot Code
+      **
+      */
+      
+      localStorage.debug = ''
+      
+      // handle when user click the 'Join' button
+      $('#auth').click(() => {
+        name = $('#nickname').val().trim();
+        //color = '#'+Math.floor(Math.random()*16777215).toString(16);
+        if(name && name !== '') {
+          socket.emit('auth',{name: name/*, color: color*/},(session) => {
+            player = session;
+            console.log('Player Id ' + player.id);
+            refresh();
+            $('#test').show();
+            $('#stop').hide();
+            $('#play').show();
+          })
+        }
+      })
+      
+      // handle when user clicks the 'Test' button
+      $('#test').click(() => {
+        $('#test').hide();
+        $('#stop').show();
+        $('#play').hide();
+        socket.emit('test',(size) => {
+          board.clear();
+          board.setBoardSize(size);
+        });
+      })
+      
+      // handle when user clicks the 'Stop' button
+      $('#stop').click(() => {
+        $('#test').show();
+        $('#stop').hide();
+        $('#play').show();
+        socket.emit('stop');
+      })
+      
+      // handle when user clicks the 'Play' button
+      $('#play').click(() => {
+        $('#test').hide();
+        $('#stop').show();
+        $('#play').hide();
+        socket.emit('play',(size) => {
+          board.clear();
+          board.setBoardSize(size);
+        });
+      })
+
+    </script>
+
   </body>
 </html>
