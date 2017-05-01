@@ -60,9 +60,10 @@
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/blockly/blockly_compressed.js"></script>
-    <script src="/blockly/blocks_compressed.js"></script>
+    <script src="/blockly/javascript_compressed.js"></script>
     <script src="/blockly/msg/js/en.js"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
+    <script src="/acorn_interpreter.js"></script>
     
     <script>
       const ICONS = [
@@ -115,7 +116,6 @@
         return BoardUI;
       })();
       
-      
     </script>
     
     <script>
@@ -148,7 +148,7 @@
       }
       
       // init the blockly ui widgets
-      //var workspace = Blockly.inject('blocklyDiv',{toolbox: document.getElementById('toolbox')});
+      var workspace = Blockly.inject('blocklyDiv',{toolbox: document.getElementById('toolbox')});
 
       // connect the websocket
       var socket = io();
@@ -246,15 +246,38 @@
       */
       
       var running = false;
+      var waiting = false;
+      var result = null;
+      var lastEvent = null;
+
+      function sendEvent(event){
+        waiting = true;
+        lastEvent = event;
+        socket.emit(event,(r) => {
+          result = r;
+          waiting = false;
+        });
+      }
+      
+      function turnLeft(){ sendEvent('turn left'); }
+      function turnRight(){ sendEvent('turn right'); }
+      function moveForward(){ sendEvent('move forward'); }
+      function tag(){ sendEvent('tag'); }
+      function distanceToWall(){ sendEvent('distance to wall'); }
+      function distanceToBot(){ sendEvent('distance to bot'); }
+      function botInFront(){ sendEvent('bot in front'); }
       
       function running(){
         return running;
       }
       
       function run(){
+        
+        
+        
         var distanceToWall = -1;
         var botInFront = false;
-        var waiting = false;
+        waiting = false;
         running = true;
         
         var timer = setInterval(() => {          
@@ -265,8 +288,6 @@
             return;
           }
                     
-          waiting = true;
-          
           ////////////////
           // User Code
           
@@ -310,11 +331,7 @@
       ** END Demo Bot Code
       **
       */
-      
-      
-      
-      
-    </script>
 
+    </script>
   </body>
 </html>

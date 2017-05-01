@@ -16,7 +16,11 @@ const port = process.env.PORT || 3000
 
 // proxy the Blockly code from the service itself
 app.get('/blockly/*', function (req,res){
-    res.sendFile(__dirname + '/node_modules/' + req.path)  
+  res.sendFile(__dirname + '/node_modules/' + req.path)  
+})
+
+app.get('/acorn_interpreter.js', function (req,res){
+  res.sendFile(__dirname + '/acorn_interpreter.js')
 })
 
 // serve the client page from the root
