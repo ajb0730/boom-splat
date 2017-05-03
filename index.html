@@ -4,11 +4,11 @@
     <title>Tag!</title>
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
+      body { font: 8px Helvetica, Arial; }
       #blocklyDiv { height: 480px; flex: 3; }
       #board { height: 480px; flex: 2; border: 1px solid #ddd; padding: 10px; font: 8px Helvetica, Arial; }
-      #scores { padding-top: 16px; padding-right: 16px; font: 24px Helvetica, Arial; flex: 1; }
-      #log { clear: both; font: 13px Menlo, Consolas, Monaco, "Lucida Console", monospace; flex: 1; border-top: 1px solid black; max-height: 350px; min-height: 150px; position: relative; overflow: auto; }
+      #scores { padding: 16px; font: 12px Helvetica, Arial; flex: 1; }
+      #log { clear: both; font: 13px Menlo, Consolas, Monaco, "Lucida Console", monospace; flex: 1; border-top: 1px solid black; max-height: 350px; min-height: 150px; position: relative; overflow: auto; padding: 12px; }
       .flex-container {
         display: -webkit-flex;
         display: flex;
@@ -39,6 +39,17 @@
         </div>
         <hr />
         <div id="others">
+          <h1>
+            How to Play
+          </h1>
+          <ol>
+            <li>Enter a nickname and click 'Join!'</li>
+            <li>Modify the example code, on the left, to make your "Tag Bot" better.</li>
+            <li>Click 'Test' to see how your code will run by itself.</li>
+            <li>Click 'Play' to try your Tag Bot against other players on the server.</li>
+          </ol>
+          <br/>
+          <b>Scoring:</b> Your score is listed as two numbers: the number of times your Tag Bot has tagged some other Bot, and the number of times your Bot has been tagged.
         </div>
       </div>      
     </div>
@@ -238,19 +249,26 @@
         function BoardUI(canvas){
           this.canvas = canvas;
           this.context = this.canvas.getContext('2d');
+          this.padding = 20;  // even number
+          this.cellWidth = 32;
+          this.cellHeight = 32;
           this.players = [];
         }
         
         BoardUI.prototype.setBoardSize = function (size){
           this.gridSize = size;
-          this.cellWidth = (this.canvas.width - 20) / this.gridSize;
-          this.cellHeight = (this.canvas.height - 20) / this.gridSize;
+          this.canvas.width = (this.cellWidth * size) + this.padding;
+          this.canvas.height = (this.cellHeight * size) + this.padding;
+          this.canvas.style.width = this.canvas.width + 'px';
+          this.canvas.style.height = this.canvas.height + 'px';
+          //this.cellWidth = (this.canvas.width - 20) / this.gridSize;
+          //this.cellHeight = (this.canvas.height - 20) / this.gridSize;
           this.context.font = '8px Arial';
         }
         
         BoardUI.prototype.updatePlayer = function (player){
           this.removePlayer(player);
-          this.players.push({id: player.id, x: player.x, y: player.y, direction: player.direction, color: player.color, shapes: player.shapes});
+          this.players.push({id: player.id, x: player.x, y: player.y, direction: player.direction, color: player.color, shapes: player.shapes, image: player.image});
           this.draw();
         }
         
@@ -265,11 +283,35 @@
           context.clearRect(0, 0, this.canvas.width, this.canvas.height);
           
           _.forEach(this.players,(p) => {
-            context.fillStyle = p.color;
-            context.fillText(p.shapes[p.direction], 10 + (p.x * this.cellWidth), 10 + ((gridsize - p.y) * this.cellHeight));
+            //context.fillStyle = p.color;
+            //context.fillText(p.shapes[p.direction], 10 + (p.x * this.cellWidth), 10 + ((gridsize - p.y) * this.cellHeight));
             //context.strokeStyle = p.color;
             //context.strokeText(p.shapes[p.direction], 10 + (p.x * this.cellWidth), 10 + ((gridsize - p.y) * this.cellHeight));
-
+            var sourceX, sourceY;
+            switch(p.direction){
+              case 0: 
+                sourceY = 3 * 64; 
+                sourceX = (( p.y % 4 ) * 64) || 0;
+                break;
+              case 1: 
+                sourceY = 2 * 64; 
+                sourceX = (( p.x % 4 ) * 64) || 0;
+                break;
+              case 2: 
+                sourceY = 0; 
+                sourceX = (( p.y % 4 ) * 64) || 0;
+                break;
+              case 3: 
+                sourceY = 1 * 64; 
+                sourceX = (( p.x % 4 ) * 64) || 0;
+                break;
+              default: 
+                sourceY = 0;
+                sourceX = 0;
+                break;
+            }
+            //console.log('draw[' + p.id + '] (' + p.x + ',' + p.y + ',' + p.direction + ') => (' + sourceX + ' ' + sourceY + ')');
+            context.drawImage(p.image, sourceX, sourceY, 64, 64, (this.padding / 2) + (p.x * this.cellWidth), (this.padding / 2) + ((gridsize - p.y - 1) * this.cellHeight), this.cellWidth, this.cellHeight);
           });
         }
         
@@ -405,19 +447,61 @@
       var player;
       var others = [];
       var board = new BoardUI(document.getElementById('board'));
+
+      var images = [
+        'https://cdn.glitch.com/9d39c092-4bce-40c6-ba7d-5f154df13d1a%2Fpikachu_sprite.png?1493847656087',
+        'https://cdn.glitch.com/9d39c092-4bce-40c6-ba7d-5f154df13d1a%2Fpangoro_sprite.png?1493847673756',
+        'https://cdn.glitch.com/9d39c092-4bce-40c6-ba7d-5f154df13d1a%2Fmonster_sprite.png?1493847681793',
+        'https://cdn.glitch.com/9d39c092-4bce-40c6-ba7d-5f154df13d1a%2Fmewtwo_sprite.png?1493847702476',
+        'https://cdn.glitch.com/9d39c092-4bce-40c6-ba7d-5f154df13d1a%2Fmech_sprite.png?1493847709999',
+        'https://cdn.glitch.com/9d39c092-4bce-40c6-ba7d-5f154df13d1a%2Fgold_sprite.png?1493847716165',
+        'https://cdn.glitch.com/9d39c092-4bce-40c6-ba7d-5f154df13d1a%2Fbunnelby_sprite.png?1493847743817',
+        'https://cdn.glitch.com/9d39c092-4bce-40c6-ba7d-5f154df13d1a%2Fsapphire_sprite.png?1493847754093',
+        'https://cdn.glitch.com/9d39c092-4bce-40c6-ba7d-5f154df13d1a%2Ftauros_sprite.png?1493847760304',
+        'https://cdn.glitch.com/9d39c092-4bce-40c6-ba7d-5f154df13d1a%2Ftrainer_sprite.png?1493847777495',
+        'https://cdn.glitch.com/9d39c092-4bce-40c6-ba7d-5f154df13d1a%2Fwolf_sprite.gif?1493847782983'
+      ];
       
       // a function to refresh the score display
       var refresh = function() {
         $('#own').empty();
-        $('#own').append('<p><font color="' + player.color + '">' + player.shapes[1] + ' ' + player.name + '</font> score: ' + player.score + '/' + player.tagged + '</p>');
+        $('#own').append('<p>' + player.name + '</font> score: ' + player.score + '/' + player.tagged + '</p>');
         $('#others').empty();
-        _.forEach(_.sortBy(others,['id']),function (b) {
-          $('#others').append('<p><font color="' + b.color + '">' + b.shapes[1] + ' ' + b.name + '</font> score: ' + b.score + '/' + b.tagged + '</p>');
+        var all = _.concat(others,player);
+        _.forEach(_.reverse(_.sortBy(all,[(p) => { return p.score - p.tagged; },'score','id'])),function (b) {
+          var src = images[b.id % images.length];
+          var sourceX, sourceY;
+          switch(b.direction){
+            case 0: 
+              sourceY = 3 * 64; 
+              sourceX = (( b.y % 4 ) * 64) || 0;
+              break;
+            case 1: 
+              sourceY = 2 * 64; 
+              sourceX = (( b.x % 4 ) * 64) || 0;
+              break;
+            case 2: 
+              sourceY = 0; 
+              sourceX = (( b.y % 4 ) * 64) || 0;
+              break;
+            case 3: 
+              sourceY = 1 * 64; 
+              sourceX = (( b.x % 4 ) * 64) || 0;
+              break;
+            default: 
+              sourceY = 0;
+              sourceX = 0;
+              break;
+          }
+          sourceY = 256 - sourceY;
+          //console.log('refresh[' + b.id + '] (' + b.x + ',' + b.y + ',' + b.direction + ') => (' + sourceX + ' ' + sourceY + ')');
+          $('#others').append('<p><span style="width: 64px; height: 64px; display: block; background: url(' + src + ') ' + sourceX + 'px ' + sourceY + 'px;"></span>' + b.name + ' score: ' + b.score + '/' + b.tagged + '</p>');
         })
       };
       
       var log = function(message) {
-        $('#log').append('<p>' + message +'</p>');
+        //$('#log').append('<p>' + message +'</p>');
+        $('#log').prepend('<p>' + message + '</p>');
       }
       
       // init the blockly ui widgets
@@ -461,6 +545,8 @@
       
       // track 'update' messages
       socket.on('update',(bot) => {
+        bot.image = new Image();
+        bot.image.src = images[bot.id % images.length];          
         // update the variables we're using to track scores
         if(bot.id === player.id) {
           player = bot;
@@ -492,6 +578,8 @@
         if(name && name !== '') {
           socket.emit('auth',{name: name/*, color: color*/},(session) => {
             player = session;
+            player.image = new Image();
+            player.image.src = images[player.id % images.length];
             console.log('Player Id ' + player.id);
             refresh();
             $('#test').show();
