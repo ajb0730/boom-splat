@@ -196,7 +196,7 @@ class Board {
         break;
     }
     //console.log('  tag: x %d y %d d %s', x, y, player.directionStr)
-    return this.isCellOccupied(x,y)
+    return this.isCellOccupied(x,y);
   }
   
   // returns number of 'moveForward' commands to next wall

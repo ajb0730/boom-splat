@@ -1,6 +1,7 @@
-# boom-splat
+# jtown-tag
 
-[Here](https://github.com/ajb0730/boom-splat)
+[Code](https://github.com/ajb0730/boom-splat)   
+[Try It](https://jtown-tag.glitch.me/)
 
 ## Made with:
 
