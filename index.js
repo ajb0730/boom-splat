@@ -60,6 +60,17 @@ var rainbow = function (numOfSteps, step) {
     return (c);
 };
 
+const SHAPE_SETS = [
+  [ '▲', '▶', '▼', '◀' ],
+  [ '↑', '→', '↓', '←' ],
+  [ '↟', '↠', '↡', '↞' ],
+  [ '↥', '↦', '↧', '↤' ],
+  [ '↾', '⇁', '⇂', '↽' ],
+  [ '⇑', '⇒', '⇓', '⇐' ],
+  [ '⇡', '⇢', '⇣', '⇠' ],
+  [ '⥣', '⥤', '⥥', '⥢' ],
+];
+
 // accept new connections from the client
 var main = server.of('/')
 
@@ -74,8 +85,9 @@ main.on('connection', function (client){
     player = new Player(_.assign({
       id: playerId,
       name: 'Player ' + playerId,
-      color: rainbow(10, (playerId % 10) + 1),
+      color: rainbow(20, (Math.floor(Math.random() * 100) % 20) + 1),
       score: 0,
+      shapes: SHAPE_SETS[playerId % SHAPE_SETS.length],
       tagged: 0,
     }, opts))
     players.push(player)

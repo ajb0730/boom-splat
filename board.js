@@ -229,19 +229,23 @@ class Board {
     switch(player.direction){
       case DIRECTION.north:
         target = _.find(this.players,(p) => { return (p.x === player.x && p.y > player.y) });
-        distance = target.y - player.y;
+        if(target)
+          distance = target.y - player.y;
         break;
       case DIRECTION.east:
         target = _.find(this.players,(p) => { return (p.y === player.y && p.x > player.x) });
-        distance = target.x - player.x;
+        if(target)
+          distance = target.x - player.x;
         break;
       case DIRECTION.south:
         target = _.find(this.players,(p) => { return (p.x === player.x && player.y > p.y) });
-        distance = player.y - target.y;
+        if(target)
+          distance = player.y - target.y;
         break;
       case DIRECTION.west:
         target = _.find(this.players,(p) => { return (p.y === player.y && player.x > p.x) });
-        distance = player.x - target.x;
+        if(target)
+          distance = player.x - target.x;
         break;
     }
     return distance;

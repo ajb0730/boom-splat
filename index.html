@@ -114,7 +114,7 @@
     </xml>
     
     <xml xmlns="http://www.w3.org/1999/xhtml" id="workspaceBlocks" style="display:none">
-      <block type="controls_if" id="%dJGAL_+d/_-s[hn}Koe" x="13" y="-37">
+      <block type="controls_if" id="%dJGAL_+d/_-s[hn}Koe" x="13" y="37">
         <mutation elseif="1" else="1"></mutation>
         <value name="IF0">
           <block type="value_botinfront" id="2fU/,$WW0,dJ1N*Fi*vG"></block>
@@ -233,12 +233,6 @@
     <script src="/acorn_interpreter.js"></script>
     
     <script>
-      const ICONS = [
-        '▲',  // north
-        '▶',  // east,
-        '▼',  // south,
-        '◀'   // west
-      ]
       BoardUI = (function(){
         
         function BoardUI(canvas){
@@ -251,12 +245,12 @@
           this.gridSize = size;
           this.cellWidth = (this.canvas.width - 20) / this.gridSize;
           this.cellHeight = (this.canvas.height - 20) / this.gridSize;
-          this.context.font = '8px Helvetica, Arial';
+          this.context.font = '8px Arial';
         }
         
         BoardUI.prototype.updatePlayer = function (player){
           this.removePlayer(player);
-          this.players.push({id: player.id, x: player.x, y: player.y, direction: player.direction, color: player.color});
+          this.players.push({id: player.id, x: player.x, y: player.y, direction: player.direction, color: player.color, shapes: player.shapes});
           this.draw();
         }
         
@@ -272,7 +266,10 @@
           
           _.forEach(this.players,(p) => {
             context.fillStyle = p.color;
-            context.fillText(ICONS[p.direction], 10 + (p.x * this.cellWidth), 10 + ((gridsize - p.y) * this.cellHeight));
+            context.fillText(p.shapes[p.direction], 10 + (p.x * this.cellWidth), 10 + ((gridsize - p.y) * this.cellHeight));
+            //context.strokeStyle = p.color;
+            //context.strokeText(p.shapes[p.direction], 10 + (p.x * this.cellWidth), 10 + ((gridsize - p.y) * this.cellHeight));
+
           });
         }
         
@@ -412,10 +409,10 @@
       // a function to refresh the score display
       var refresh = function() {
         $('#own').empty();
-        $('#own').append('<p><font color="' + player.color + '">' + player.name + '</font> score: ' + player.score + '/' + player.tagged + '</p>');
+        $('#own').append('<p><font color="' + player.color + '">' + player.shapes[1] + ' ' + player.name + '</font> score: ' + player.score + '/' + player.tagged + '</p>');
         $('#others').empty();
-        _.forEach(_.sortBy(others,['name']),function (b) {
-          $('#others').append('<p><font color="' + b.color + '">' + b.name + '</font> score: ' + b.score + '/' + b.tagged + '</p>');
+        _.forEach(_.sortBy(others,['id']),function (b) {
+          $('#others').append('<p><font color="' + b.color + '">' + b.shapes[1] + ' ' + b.name + '</font> score: ' + b.score + '/' + b.tagged + '</p>');
         })
       };
       
