@@ -85,37 +85,37 @@ main.on('connection', function (client){
     client.handlers = {
       turnLeft: function(callback) {
         var result = client.board.turnLeft(client.player)
-        //console.log('[%s] turnLeft %s', client.player, result)
+        //console.log('[%s] turnLeft %s', client.player.name, result)
         callback(result)
       },
       turnRight: function(callback) {
         var result = client.board.turnRight(client.player)
-        //console.log('[%s] turnRight %s', client.player, result)        
+        //console.log('[%s] turnRight %s', client.player.name, result)        
         callback(result)
       },
       moveForward: function(callback) {
         var result = client.board.moveForward(client.player)
-        //console.log('[%s] moveForward %s', client.player, result)        
+        //console.log('[%s] moveForward %s', client.player.name, result)        
         callback(result)
       },
       tag: function(callback) {
         var result = client.board.tag(client.player)
-        //console.log('[%s] tag %s', client.player, result)        
+        //console.log('[%s] tag %s', client.player.name, result)        
         callback(result)
       },
       distanceToWall: function(callback) {
         var result = client.board.distanceToWall(client.player)
-        //console.log('[%s] distanceToWall %s', client.player, result)        
+        //console.log('[%s] distanceToWall %s', client.player.name, result)        
         callback(result)
       },
       distanceToBot: function(callback) {
         var result = client.board.distanceToBot(client.player)
-        //console.log('[%s] distanceToBot %s', client.player, result)        
+        //console.log('[%s] distanceToBot %s', client.player.name, result)        
         callback(result)
       },
       botInFront: function(callback) {
-        var result = client.board.botInFront(client.player)
-        //console.log('[%s] botInFront %s', client.player, result)        
+        var result = client.board.botInFront(client.player) ? true : false;
+        //console.log('[%s] botInFront %s', client.player.name, result)        
         callback(result)
       }
     }

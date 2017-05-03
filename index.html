@@ -43,26 +43,193 @@
       </div>      
     </div>
     
-    <xml id="toolbox" style="display: none">
-      <block type="controls_if"></block>
-      <block type="controls_repeat_ext"></block>
-      <block type="logic_compare"></block>
-      <block type="math_number"></block>
-      <block type="math_arithmetic"></block>
-      <block type="text"></block>
-      <block type="text_print"></block>
+    <xml xmlns="http://www.w3.org/1999/xhtml" id="toolbox" style="display: none;">
+      <category name="Movement" colour="#6d5ba5">
+        <block type="bot_forward"></block>
+        <block type="bot_turn">
+          <field name="DIRECTION">LEFT</field>
+        </block>
+        <block type="bot_tag"></block>
+      </category>
+      <category name="Sensors" colour="#935ba5">
+        <block type="value_distancetowall"></block>
+        <block type="value_distancetobot"></block>
+        <block type="value_botinfront"></block>
+      </category>
+      <category name="Logic" colour="#5C81A6">
+        <block type="controls_if"></block>
+        <block type="logic_compare">
+          <field name="OP">EQ</field>
+        </block>
+        <block type="logic_operation">
+          <field name="OP">AND</field>
+        </block>
+        <block type="logic_negate"></block>
+        <block type="logic_boolean">
+          <field name="BOOL">TRUE</field>
+        </block>
+      </category>
+      <category name="Loops" colour="#5CA65C">
+        <block type="controls_repeat_ext">
+          <value name="TIMES">
+            <shadow type="math_number">
+              <field name="NUM">10</field>
+            </shadow>
+          </value>
+        </block>
+        <block type="controls_whileUntil">
+          <field name="MODE">WHILE</field>
+        </block>
+      </category>
+      <category name="Math" colour="#5C68A6">
+        <block type="math_number">
+          <field name="NUM">0</field>
+        </block>
+        <block type="math_arithmetic">
+          <field name="OP">ADD</field>
+          <value name="A">
+            <shadow type="math_number">
+              <field name="NUM">1</field>
+            </shadow>
+          </value>
+          <value name="B">
+            <shadow type="math_number">
+              <field name="NUM">1</field>
+            </shadow>
+          </value>
+        </block>
+        <block type="math_random_int">
+          <value name="FROM">
+            <shadow type="math_number">
+              <field name="NUM">1</field>
+            </shadow>
+          </value>
+          <value name="TO">
+            <shadow type="math_number">
+              <field name="NUM">100</field>
+            </shadow>
+          </value>
+        </block>
+      </category>
     </xml>
     
+    <xml xmlns="http://www.w3.org/1999/xhtml" id="workspaceBlocks" style="display:none">
+      <block type="controls_if" id="%dJGAL_+d/_-s[hn}Koe" x="13" y="-37">
+        <mutation elseif="1" else="1"></mutation>
+        <value name="IF0">
+          <block type="value_botinfront" id="2fU/,$WW0,dJ1N*Fi*vG"></block>
+        </value>
+        <statement name="DO0">
+          <block type="bot_tag" id="MXMrS*4Y]`)P]yi_MO(u">
+            <next>
+              <block type="controls_if" id="w^GpC!ki$dsXY#`|V,+B">
+                <mutation else="1"></mutation>
+                <value name="IF0">
+                  <block type="logic_compare" id="a{%U9Q4x#XqzKDS/#w}S">
+                    <field name="OP">EQ</field>
+                    <value name="A">
+                      <block type="math_random_int" id="swE~i-V^y-K:ZU*wnD23">
+                        <value name="FROM">
+                          <shadow type="math_number" id="STn$TgyM*_IAb^{u24|/">
+                            <field name="NUM">1</field>
+                          </shadow>
+                        </value>
+                        <value name="TO">
+                          <shadow type="math_number" id="i,m=+$W72@r?tm/;0KG2">
+                            <field name="NUM">2</field>
+                          </shadow>
+                        </value>
+                      </block>
+                    </value>
+                    <value name="B">
+                      <block type="math_number" id="wjCw__1;J3KgQ^m~9Zn,">
+                        <field name="NUM">1</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <statement name="DO0">
+                  <block type="bot_turn" id="5=[69-m6h(rrd%hv[p50">
+                    <field name="DIRECTION">LEFT</field>
+                  </block>
+                </statement>
+                <statement name="ELSE">
+                  <block type="bot_turn" id="6T{dUf_V[4RT?/1;:P-O">
+                    <field name="DIRECTION">RIGHT</field>
+                  </block>
+                </statement>
+              </block>
+            </next>
+          </block>
+        </statement>
+        <value name="IF1">
+          <block type="logic_compare" id=",ih:.-xx@.L0]9sG+zfN">
+            <field name="OP">GT</field>
+            <value name="A">
+              <block type="value_distancetowall" id="$o.[?C.{-hXPHJ,XaJ[B"></block>
+            </value>
+            <value name="B">
+              <block type="math_number" id="ns%f}eQ(v/{En|PUS#Ui">
+                <field name="NUM">0</field>
+              </block>
+            </value>
+          </block>
+        </value>
+        <statement name="DO1">
+          <block type="bot_forward" id="LmeSV`0QWG,,Jwb}R_K{"></block>
+        </statement>
+        <statement name="ELSE">
+          <block type="controls_if" id="X}S0=.8a1HW?-Oyj[t3M">
+            <mutation else="1"></mutation>
+            <value name="IF0">
+              <block type="logic_compare" id="KW=f7uP~Z^TniuULul?L">
+                <field name="OP">EQ</field>
+                <value name="A">
+                  <block type="math_random_int" id="X|Z?ZScpKG9Nhn^d.0(?">
+                    <value name="FROM">
+                      <block type="math_number" id="LpTE,aIB2{`J+hpUE.:~">
+                        <field name="NUM">1</field>
+                      </block>
+                    </value>
+                    <value name="TO">
+                      <block type="math_number" id="/k7g=P~[L*F@4eq1KP*+">
+                        <field name="NUM">2</field>
+                      </block>
+                    </value>
+                  </block>
+                </value>
+                <value name="B">
+                  <block type="math_number" id="*4rXr(Is4QK[tBt?O#7#">
+                    <field name="NUM">1</field>
+                  </block>
+                </value>
+              </block>
+            </value>
+            <statement name="DO0">
+              <block type="bot_turn" id="=3AnRLS}:1pQa8.$+K|P">
+                <field name="DIRECTION">LEFT</field>
+              </block>
+            </statement>
+            <statement name="ELSE">
+              <block type="bot_turn" id="GKOPE=PAczhDE1;)[8xd">
+                <field name="DIRECTION">RIGHT</field>
+              </block>
+            </statement>
+          </block>
+        </statement>
+      </block>
+    </xml>
     
-    
+
     <footer id="log"></footer>
 
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/blockly/blockly_compressed.js"></script>
+    <script src="/blockly/blocks_compressed.js"></script>
     <script src="/blockly/javascript_compressed.js"></script>
     <script src="/blockly/msg/js/en.js"></script>
-    <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
     <script src="/acorn_interpreter.js"></script>
     
     <script>
@@ -119,6 +286,115 @@
     </script>
     
     <script>
+      Blockly.Blocks['bot_forward'] = {
+        init: function() {
+          this.appendDummyInput()
+              .appendField("move forward");
+          this.setPreviousStatement(true, null);
+          this.setNextStatement(true, null);
+          this.setColour(260);
+          this.setTooltip('move forward one space');
+          this.setHelpUrl('');
+        }
+      };
+
+      Blockly.Blocks['bot_turn'] = {
+        init: function() {
+          this.appendDummyInput()
+              .appendField("turn")
+              .appendField(new Blockly.FieldDropdown([["left ↺","LEFT"], ["right ↻","RIGHT"]]), "DIRECTION");
+          this.setPreviousStatement(true, null);
+          this.setNextStatement(true, null);
+          this.setColour(260);
+          this.setTooltip('rotate bot in one direction or the other');
+          this.setHelpUrl('');
+        }
+      };
+
+      Blockly.Blocks['bot_tag'] = {
+        init: function() {
+          this.appendDummyInput()
+              .appendField("tag");
+          this.setPreviousStatement(true, null);
+          this.setNextStatement(true, null);
+          this.setColour(260);
+          this.setTooltip('tag the space directly in front of your bot');
+          this.setHelpUrl('');
+        }
+      };
+
+      Blockly.Blocks['value_distancetowall'] = {
+        init: function() {
+          this.appendDummyInput()
+              .appendField("distance to wall");
+          this.setOutput(true, "Number");
+          this.setColour(290);
+          this.setTooltip('number of spaces until your bot will run into a wall');
+          this.setHelpUrl('');
+        }
+      };
+
+      Blockly.Blocks['value_distancetobot'] = {
+        init: function() {
+          this.appendDummyInput()
+              .appendField("distance to bot");
+          this.setOutput(true, "Number");
+          this.setColour(290);
+          this.setTooltip('number of spaces (to the front) until the next bot; 0 means no bots in front');
+          this.setHelpUrl('');
+        }
+      };
+
+      Blockly.Blocks['value_botinfront'] = {
+        init: function() {
+          this.appendDummyInput()
+              .appendField("there is a bot directly in front");
+          this.setOutput(true, "Boolean");
+          this.setColour(210);
+          this.setTooltip('yes/no if there is a bot right in front');
+          this.setHelpUrl('');
+        }
+      };
+      
+      Blockly.JavaScript['bot_forward'] = function(block) {
+        var code = 'moveForward();\n';
+        return code;
+      };
+
+      Blockly.JavaScript['bot_turn'] = function(block) {
+        var dropdown_direction = block.getFieldValue('DIRECTION');
+        var code;
+        if(dropdown_direction === 'LEFT') {
+          code = 'turnLeft();\n';
+        } else {
+          code = 'turnRight();\n';
+        }
+        return code;
+      };
+
+      Blockly.JavaScript['bot_tag'] = function(block) {
+        var code = 'tag();\n';
+        return code;
+      };
+
+      Blockly.JavaScript['value_distancetowall'] = function(block) {
+        var code = 'distanceToWall()';
+        return [code, Blockly.JavaScript.ORDER_NONE];
+      };
+
+      Blockly.JavaScript['value_distancetobot'] = function(block) {
+        var code = 'distanceToBot()';
+        return [code, Blockly.JavaScript.ORDER_NONE];
+      };
+
+      Blockly.JavaScript['value_botinfront'] = function(block) {
+        var code = 'botInFront()';
+        return [code, Blockly.JavaScript.ORDER_NONE];
+      };      
+    </script>
+    
+
+    <script>
       localStorage.debug = ''
       
       // hide all of the action buttons
@@ -138,7 +414,7 @@
         $('#own').empty();
         $('#own').append('<p><font color="' + player.color + '">' + player.name + '</font> score: ' + player.score + '/' + player.tagged + '</p>');
         $('#others').empty();
-        _.forEach(others,function (b) {
+        _.forEach(_.sortBy(others,['name']),function (b) {
           $('#others').append('<p><font color="' + b.color + '">' + b.name + '</font> score: ' + b.score + '/' + b.tagged + '</p>');
         })
       };
@@ -148,7 +424,31 @@
       }
       
       // init the blockly ui widgets
-      var workspace = Blockly.inject('blocklyDiv',{toolbox: document.getElementById('toolbox')});
+      var toolbox = document.getElementById("toolbox");
+
+      var options = { 
+        toolbox : toolbox, 
+        collapse : true, 
+        comments : false, 
+        disable : true, 
+        maxBlocks : Infinity, 
+        trashcan : true, 
+        horizontalLayout : false, 
+        toolboxPosition : 'start', 
+        css : true, 
+        media : 'https://blockly-demo.appspot.com/static/media/', 
+        rtl : false, 
+        scrollbars : true, 
+        sounds : true, 
+        oneBasedIndex : true
+      };
+
+      /* Inject the workspace */ 
+      var workspace = Blockly.inject('blocklyDiv', options);
+
+      /* Load Workspace Blocks from XML to workspace. */
+      var workspaceBlocks = document.getElementById("workspaceBlocks"); 
+      Blockly.Xml.domToWorkspace(workspaceBlocks, workspace);
 
       // connect the websocket
       var socket = io();
@@ -241,85 +541,129 @@
      
       /*
       **
-      ** Demo Bot Code
+      ** Bot Code
       **
       */
       
       var running = false;
       var waiting = false;
-      var result = null;
-      var lastEvent = null;
-
-      function sendEvent(event){
-        waiting = true;
-        lastEvent = event;
-        socket.emit(event,(r) => {
-          result = r;
-          waiting = false;
-        });
-      }
+      var myInterpreter = undefined;
       
-      function turnLeft(){ sendEvent('turn left'); }
-      function turnRight(){ sendEvent('turn right'); }
-      function moveForward(){ sendEvent('move forward'); }
-      function tag(){ sendEvent('tag'); }
-      function distanceToWall(){ sendEvent('distance to wall'); }
-      function distanceToBot(){ sendEvent('distance to bot'); }
-      function botInFront(){ sendEvent('bot in front'); }
+      function initApi(interpreter,scope) {
+        var wrapper = function(callback){
+          waiting = true;
+          //console.log('turnLeft');
+          socket.emit('turn left',(r) => {
+            //console.log(r);
+            waiting = false;
+            callback(interpreter.createPrimitive(r));
+          });
+        };
+        interpreter.setProperty(scope, 'turnLeft', interpreter.createAsyncFunction(wrapper));
+        
+        var wrapper = function(callback){
+          waiting = true;
+          //console.log('turnRight');
+          socket.emit('turn right',(r) => {
+            //console.log(r);
+            waiting = false;
+            callback(interpreter.createPrimitive(r));
+          });
+        };
+        interpreter.setProperty(scope, 'turnRight', interpreter.createAsyncFunction(wrapper));
+        
+        var wrapper = function(callback){
+          waiting = true;
+          //console.log('moveForward');
+          socket.emit('move forward',(r) => {
+            //console.log(r);
+            waiting = false;
+            callback(interpreter.createPrimitive(r));
+          });
+        };
+        interpreter.setProperty(scope, 'moveForward', interpreter.createAsyncFunction(wrapper));
+        
+        var wrapper = function(callback){
+          waiting = true;
+          //console.log('tag');
+          socket.emit('tag',(r) => {
+            //console.log(r);
+            waiting = false;
+            callback(interpreter.createPrimitive(r));
+          });
+        };
+        interpreter.setProperty(scope, 'tag', interpreter.createAsyncFunction(wrapper));
+        
+        var wrapper = function(callback){
+          waiting = true;
+          //console.log('distanceToWall');
+          socket.emit('distance to wall',(r) => {
+            //console.log(r);
+            waiting = false;
+            callback(interpreter.createPrimitive(r));
+          });
+        };
+        interpreter.setProperty(scope, 'distanceToWall', interpreter.createAsyncFunction(wrapper));
+        
+        var wrapper = function(callback){
+          waiting = true;
+          //console.log('distanceToBot');
+          socket.emit('distance to bot',(r) => {
+            //console.log(r);
+            waiting = false;
+            callback(interpreter.createPrimitive(r));
+          });
+        };
+        interpreter.setProperty(scope, 'distanceToBot', interpreter.createAsyncFunction(wrapper));
+        
+        var wrapper = function(callback){
+          waiting = true;
+          //console.log('botInFront');
+          socket.emit('bot in front',(r) => {
+            //console.log(r);
+            waiting = false;
+            callback(interpreter.createPrimitive(r));
+          });
+        };
+        interpreter.setProperty(scope, 'botInFront', interpreter.createAsyncFunction(wrapper));
+      }
       
       function running(){
         return running;
       }
       
       function run(){
-        
-        
-        
-        var distanceToWall = -1;
-        var botInFront = false;
         waiting = false;
         running = true;
         
-        var timer = setInterval(() => {          
+        var code = "while(true) { " + Blockly.JavaScript.workspaceToCode(workspace) + " }";
+        if(myInterpreter)
+          delete myInterpreter;
+        myInterpreter = new Interpreter(code, initApi)
+        
+        var timer;
+        
+        var eventLoop = () => {
           if(running === false){
-            clearInterval(timer);
+            clearTimeout(timer);
             return;
           } else if(waiting === true) {
+            setTimeout(eventLoop,10);
             return;
           }
-                    
-          ////////////////
-          // User Code
           
-          if(botInFront) {
-            socket.emit('tag',(success) => {botInFront = false; distanceToWall = 0; waiting = false;});
-          } else if(distanceToWall < 0) {
-            socket.emit('distance to wall',(distance) => {distanceToWall = distance; waiting = false;});
-          } else if(distanceToWall > 0) {
-            socket.emit('move forward',(success) => {
-              if(success){
-                distanceToWall -= 1;
-              }else if(distanceToWall > 0){
-                botInFront = true;
-              }
-              waiting = false;
-            });
-          } else {  // distanceToWall === 0
-            switch(_.random(0,1)){
-              case 0:
-                socket.emit('turn left',()=>{distanceToWall = -1; waiting = false;});
-                break;
-              case 1:
-              default:
-                socket.emit('turn right',()=>{distanceToWall = -1; waiting = false;});
-                break;
+          try {
+            var ok = myInterpreter.step();
+          } finally {
+            if(!ok) {
+              clearInterval(timer);
+              running = false;
             }
           }
-          
-          // END User Code
-          ////////////////
-          
-        },250);
+          setTimeout(eventLoop,0);
+        };
+        
+        timer = setTimeout(eventLoop,0);
       }
       
       function stop(){
@@ -328,7 +672,7 @@
       
       /*
       **
-      ** END Demo Bot Code
+      ** END Bot Code
       **
       */
 
