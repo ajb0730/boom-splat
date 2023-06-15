@@ -21,7 +21,7 @@ const CARDINAL = [
 class Board {
   constructor(options) {
     this.players = []
-    this.size = 25
+    this.size = 14
 //    this.winner = 3
     this.open = false
     this.loop = false
